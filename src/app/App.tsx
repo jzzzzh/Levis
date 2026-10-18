@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppDialogHost } from "../ui/app-dialog";
 import { WindowBar } from "./WindowBar";
 import { installClipboardCapture } from "../clipboard/history";
@@ -8,6 +8,7 @@ import { DocumentList } from "../mobile/DocumentList";
 import { KeyboardToolbar } from "../mobile/KeyboardToolbar";
 import { usePhoneLayout } from "../ui/usePhoneLayout";
 import { useSettings } from "../settings/SettingsContext";
+import { links } from "../platform/ipc";
 import { useTutorial } from "../onboarding/useTutorial";
 import { useTutorialDocumentEvaluation } from "../onboarding/useTutorialDocumentEvaluation";
 import { formatCombo } from "../utils/shortcuts";
@@ -26,7 +27,11 @@ import { useTabState } from "./useTabState";
 import { useSidePanels } from "./useSidePanels";
 import { useActiveDocument } from "./useActiveDocument";
 import { useSessionPaths, useWindowTitle } from "./useWindowSession";
-import { useFileOpening, useOpenPathsPush } from "./useFileOpening";
+import {
+  useFileDrop,
+  useFileOpening,
+  useOpenPathsPush,
+} from "./useFileOpening";
 import { useHelpTabs } from "./useHelpTabs";
 import { useSaveTabs } from "./useSaveTabs";
 import { useZenMode } from "./useZenMode";
@@ -41,8 +46,9 @@ import {
 import {
   useLevisOffer,
   usePracticeTab,
-  useSidebarLesson,
+  usePracticeDiary,
   useTutorialTabRecovery,
+  useWindowLessons,
 } from "./onboarding-wiring";
 import { Sidebar } from "./Sidebar";
 import { MainPane } from "./MainPane";
@@ -82,6 +88,7 @@ function App() {
     panelOpen,
     setPanelOpen,
     toggleSidebar,
+    sidebarWidth,
     agentPanel,
     agentOverlays,
     agentPanelEl,
@@ -97,15 +104,13 @@ function App() {
     setPanelMode,
   } = useSidePanels();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const appUpdate = useAppUpdate();
+  const appUpdate = useAppUpdate(settings.updateChannel);
   useZoom(settings.zoom, (zoom) => setSettings({ zoom }));
   const tutorial = useTutorial();
   const startTutorial = tutorial.start;
   const stopTutorial = tutorial.exit;
-  const evaluateTutorialDocumentChange = useTutorialDocumentEvaluation(
-    tutorial,
-    t,
-  );
+  const evaluateTutorialDocumentChange =
+    useTutorialDocumentEvaluation(tutorial);
   const cancelDraftFlushes = useDraftAutosave(
     tabs,
     settings.enableDraftRecovery,
@@ -123,11 +128,16 @@ function App() {
   useWindowTitle(activeTitle);
   useSessionPaths(tabs);
 
+  const dialogFilters = useMemo(
+    () => ({ textFilter: t.openDialogText, allFilter: t.openDialogAll }),
+    [t],
+  );
   const { openPathInTab, replaceTabWithFile, openFile, openFileDialog } =
     useFileOpening({
       tabState,
       newDocumentMode: settings.newDocumentMode,
       setPendingClose,
+      dialogFilters,
     });
 
   const { openHelpTab } = useHelpTabs({
@@ -197,6 +207,12 @@ function App() {
   useEffect(() => installClipboardCapture(), []);
 
   useTutorialTabRecovery(tutorial, tabState, claimPracticeTab);
+  usePracticeDiary({
+    tutorial,
+    tabState,
+    language: settings.language,
+    evaluate: evaluateTutorialDocumentChange,
+  });
 
   // Files handed over by the OS (Finder "Open With" / double-click, or the
   // `textus` CLI command) at launch, recovered drafts, a dragged-in tab, or a
@@ -219,6 +235,7 @@ function App() {
 
   // The same, pushed to an already-running window (useFileOpening.ts).
   useOpenPathsPush(openPathInTab);
+  useFileDrop(openFile, openPathInTab);
 
   useWindowCloseGuard(liveTabs, setPendingClose);
 
@@ -253,6 +270,7 @@ function App() {
     activeTabId,
     liveTabs,
     t,
+    pdfPageNumbers: settings.pdfPageNumbers,
     onOpenSettings: () => setSettingsOpen(true),
     onToggleTypewriter: () =>
       setSettings({ typewriterMode: !settings.typewriterMode }),
@@ -268,15 +286,26 @@ function App() {
     requestCloseTab,
     openHelpTab,
     startWelcomeTutorial,
+    openCommunity: () => void links.openCommunityPage(settings.language),
+    openTutorials: () => void links.openTutorialsPage(settings.language),
     onOpenDocuments: () => setDocumentsOpen(true),
     shareActiveTab,
   });
 
-  const sidebarLesson = useSidebarLesson({
+  const sidebarLesson = useWindowLessons({
     tutorial,
     languageChosen: settings.languageChosen,
+    panelOpen,
     panelMode,
-    setPanelOpen,
+    agentPanelOpen: agentPanel.open,
+    agentPanelTab: agentPanel.tab,
+    writingMode: [
+      zenMode,
+      settings.typewriterMode,
+      !!activeTab.sourceMode,
+      !!activeTab.splitView,
+    ].join(),
+    look: `${settings.themeId} ${settings.theme}`,
   });
 
   const { closeSaving, closeDiscarding, cancelClose, closePrompt } =
@@ -318,6 +347,11 @@ function App() {
               agentPresence.mounted && !agentOverlays && !isIOSApp
                 ? `${agentPanel.width}px`
                 : "0px",
+            // The sidebar's dragged width (sidebar-frame.css); an iPad
+            // keeps the stylesheet's, its sidebar has no handle.
+            ...(!isIOSApp && {
+              "--sidebar-width": `${sidebarWidth.width}px`,
+            }),
           } as React.CSSProperties
         }
       >
@@ -339,6 +373,7 @@ function App() {
           spotlight={sidebarLesson}
           mode={panelMode}
           onModeChange={setPanelMode}
+          width={sidebarWidth}
           rootPath={rootPath}
           activePath={activeTab.path}
           activeContent={activeTab.content}
@@ -360,7 +395,11 @@ function App() {
           previewTab={dragHoverPreview}
           onChange={handleChange}
           typewriter={settings.typewriterMode}
-          tutorialTabId={tutorial.active ? tutorial.tabId : null}
+          tour={
+            tutorial.active && tutorial.tabId
+              ? { tabId: tutorial.tabId, ai: tutorial.practiceAi }
+              : null
+          }
           t={t}
         />
 
@@ -442,6 +481,7 @@ function App() {
           settings={settings}
           setSettings={setSettings}
           levisPending={levisOffer.pending}
+          zen={{ on: zenMode, toggle: toggleZenMode }}
           t={t}
         />
       </div>

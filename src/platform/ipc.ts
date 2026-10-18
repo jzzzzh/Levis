@@ -1,4 +1,6 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
+import { Update } from "@tauri-apps/plugin-updater";
+import type { UpdateChannel } from "./update-channel";
 import type {
   ChatHandoff,
   ChatHandoffState,
@@ -14,6 +16,7 @@ import type {
 } from "../ai/types";
 import type { GrammarIssue } from "../ai/writing/grammar-check-plugin";
 import type { SkillCategory } from "../ai/skills/builtin";
+import type { Lang } from "../i18n/langs";
 import { isDesktopApp, isIOSApp } from "./capabilities";
 import { iosFiles, isScopedUrl, newDocumentPath } from "./ios-files";
 
@@ -100,10 +103,15 @@ export const fs = {
   // On iOS a picked document is a file:// URL read and written through the
   // native plugin (platform/ios-files.ts); sandbox paths and every desktop
   // path go to Rust as before.
-  openFileDialog: (): Promise<string | null> =>
+  /** `filters` names the dialog's file-type choices besides Markdown, in
+   *  the UI language (commands/fs.rs). */
+  openFileDialog: (filters?: {
+    textFilter: string;
+    allFilter: string;
+  }): Promise<string | null> =>
     isIOSApp
       ? iosFiles.pickDocument()
-      : call<string | null>("open_file_dialog"),
+      : call<string | null>("open_file_dialog", filters),
   openCssFileDialog: () => call<string | null>("open_css_file_dialog"),
   saveFileDialog: (defaultName: string): Promise<string | null> =>
     isIOSApp
@@ -166,7 +174,7 @@ export const session = {
 
 // ---------------------------------------------------------------------------
 // storage (src-tauri/src/settings.rs) - settings, UI state and the two
-// histories, held by Rust in plain JSON files (docs/STORAGE.md). Only called
+// histories, held by Rust in plain JSON files (docs/dev/storage.md). Only called
 // when Rust booted this window (src/storage/boot.ts); without that, the
 // stores fall back to localStorage.
 // ---------------------------------------------------------------------------
@@ -345,7 +353,17 @@ export const menuIpc = {
 /** Our own pages, opened in the system browser. Each URL is fixed in Rust
  *  (commands/links.rs), not passed from here. */
 export const links = {
-  openCommunityPage: () => call<void>("open_community_page"),
+  /** The website's community page, in the UI's language. */
+  openCommunityPage: (language: Lang) =>
+    call<void>("open_community_page", { language }),
+  /** The website's video tutorials in the UI's language, at one lesson's
+   *  clip (a TUTORIAL_CLIPS id, onboarding/tutorial-steps.ts) or, without
+   *  one, from the top. */
+  openTutorialsPage: (language: Lang, clip?: string) =>
+    call<void>("open_tutorials_page", { language, clip: clip ?? null }),
+  /** Settings › General › About Textus's links, by name. */
+  openAboutLink: (page: "github" | "discord" | "qq") =>
+    call<void>("open_about_link", { page }),
 };
 
 export const exportDoc = {
@@ -368,11 +386,13 @@ export const exportDoc = {
   // Renders the self-contained, already-paginated themed HTML offscreen and
   // writes the PDF straight to `path` - no print dialog on any platform
   // (WKWebView createPDF / WebView2 PrintToPdf / WebKitGTK print-to-file;
-  // see export.rs). baseDir resolves relative images.
+  // see export.rs). baseDir resolves relative images. pageNumbers stamps
+  // each page's number on the finished file (pdf_page_numbers.rs).
   exportPdfNative: (args: {
     html: string;
     baseDir: string | null;
     outputPath: string;
+    pageNumbers: boolean;
   }) => desktopAction<void>("export_pdf_native", args),
 };
 
@@ -514,7 +534,7 @@ export interface LibraryEntry {
   body: string;
 }
 
-/** What shapes Textus AI for one document - see docs/AI-CONCEPTS.md. */
+/** What shapes Textus AI for one document - see docs/design/ai-concepts.md. */
 export interface AgentWorkspaceInfo {
   /** The global writing instructions (agent.md), comments stripped. */
   instructions: string[];
@@ -961,6 +981,29 @@ export type Distribution = "direct" | "homebrew" | "aur";
 
 export const distribution = {
   appDistribution: () => call<Distribution>("app_distribution"),
+};
+
+// ---------------------------------------------------------------------------
+// update (src-tauri/src/commands/update.rs) - desktop only
+// ---------------------------------------------------------------------------
+
+export type { UpdateChannel } from "./update-channel";
+
+/** Mirrors UpdateMetadata in src-tauri/src/commands/update.rs, which is the
+ *  plugin's own check answer. */
+type UpdateMetadata = ConstructorParameters<typeof Update>[0];
+
+export const updater = {
+  /** The plugin's `check()` on `channel`'s endpoints; the `Update` it
+   *  answers downloads and installs through the plugin as usual. */
+  check: async (channel: UpdateChannel): Promise<Update | null> => {
+    const metadata = await desktopQuery<UpdateMetadata | null>(
+      "check_for_update",
+      null,
+      { channel },
+    );
+    return metadata ? new Update(metadata) : null;
+  },
 };
 
 // ---------------------------------------------------------------------------

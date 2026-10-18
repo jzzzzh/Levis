@@ -29,19 +29,18 @@
 
 <p align="center">
   <a href="https://github.com/CatVinci-Studio/Textus/releases/latest"><img alt="version" src="https://img.shields.io/github/v/release/CatVinci-Studio/Textus"></a>
-  <a href="https://github.com/CatVinci-Studio/Textus/releases"><img alt="downloads" src="https://img.shields.io/github/downloads/CatVinci-Studio/Textus/total"></a>
-  <a href="https://github.com/CatVinci-Studio/Textus/stargazers"><img alt="stars" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2FCatVinci-Studio%2FTextus&query=%24.stargazers_count&label=stars&logo=github&cacheSeconds=3600"></a>
-  <img alt="platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-teal">
   <a href="./LICENSE"><img alt="license" src="https://img.shields.io/badge/license-MIT-yellow"></a>
   <a href="https://github.com/CatVinci-Studio/Textus/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/CatVinci-Studio/Textus/ci.yml?branch=main&label=CI"></a>
-  <a href="https://textus.catvinci.com/discord"><img alt="Discord" src="https://img.shields.io/discord/1560734722219311294?label=Discord&logo=discord&logoColor=white&color=5865F2"></a>
-  <a href="https://textus.catvinci.com/qq"><img alt="QQ" src="https://img.shields.io/badge/QQ-1128285004-12B7F5?logo=qq&logoColor=white"></a>
-  <a href="https://textus.catvinci.com/wechat"><img alt="WeChat" src="https://img.shields.io/badge/WeChat-group-07C160?logo=wechat&logoColor=white"></a>
-  <img alt="languages" src="https://img.shields.io/badge/languages-10-blue">
-  <a href="https://textus.catvinci.com"><img alt="website" src="https://img.shields.io/badge/website-textus.catvinci.com-8a6d3b"></a>
+  <a href="https://textus.catvinci.com/discord"><img alt="Discord" src="https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white"></a>
+  <a href="https://github.com/jaywcjlove/awesome-mac"><img alt="Awesome Mac" src="https://img.shields.io/badge/Awesome-Mac-FC60A8?logo=awesomelists&logoColor=white"></a>
 </p>
 
 https://github.com/user-attachments/assets/f366f282-e3f9-43d9-9a29-edb6d1ace3f5
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=k_ew9TRljz0">Voir sur YouTube</a> ·
+  <a href="https://www.bilibili.com/video/BV19LJb6WEWb">Bilibili</a>
+</p>
 
 <p align="center">
   <img src="docs/images/readme/fr/hero.png" alt="Textus avec Les Misérables et les notes du lecteur ouvertes. Textus AI resserre les notes phrase par phrase, chaque modification dans la marge, et épingle un commentaire de relecture à côté du texte." width="860" /><br>
@@ -72,6 +71,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/CatVinci-Studio/arch-repo/ma
 ```
 
 Bientôt sur iPhone et iPad. [Toutes les versions sur GitHub](https://github.com/CatVinci-Studio/Textus/releases)
+
+Envie des nouvelles versions en avance ? Dans **Réglages › Général › À propos de Textus**, réglez le **Canal de mise à jour** sur **Bêta** pour recevoir aussi les versions candidates ; vous pouvez revenir à **Stable** à tout moment, et vous gardez votre version jusqu'à la sortie d'une version stable plus récente.
 
 ## Écriture
 
@@ -181,32 +182,7 @@ Oui : de simples fichiers .md, avec tableaux, listes de tâches, notes de bas de
 3. Commencez à écrire. Quand vous marquez une pause, la suite apparaît en gris ; Tab l’accepte.
 4. Ouvrez le Panneau IA avec le bouton de discussion de la barre de fenêtre. **Aide → Guide des fonctions IA** présente le reste.
 
-| Action                               | Raccourci                           |
-| ------------------------------------ | ----------------------------------- |
-| Panneau IA                           | Ctrl/⌘+Shift+L                      |
-| Question rapide                      | Ctrl/⌘+Shift+K                      |
-| Suggérer une complétion              | Ctrl/⌘+Shift+Space                  |
-| Vérifier la grammaire                | Ctrl/⌘+Shift+G                      |
-| Accepter une modification en attente | Ctrl/⌘+Enter                        |
-| Vue partagée                         | Ctrl/⌘+Shift+E                      |
-| Mode zen                             | Ctrl/⌘+Shift+J (Échap pour quitter) |
-| Mode source                          | Ctrl/⌘+/                            |
-
-Tous se modifient dans **Réglages → Raccourcis**.
-
-## Compiler depuis les sources
-
-```bash
-git clone https://github.com/CatVinci-Studio/Textus.git
-cd Textus
-npm install
-
-npm run tauri dev     # full Tauri app (Rust shell + Vite renderer)
-npm run tauri build   # bundle .dmg / -setup.exe (NSIS) / .AppImage / .deb / .rpm
-npm run build         # frontend only: type-check (tsc) + vite build
-```
-
-Il faut [Node.js](https://nodejs.org) 22 ou plus, [Rust](https://rustup.rs) (stable) et les outils de compilation de chaque plateforme (Xcode CLT sur macOS ; `libwebkit2gtk-4.1-dev`/`libappindicator3-dev`/`librsvg2-dev`/`patchelf` sur Linux ; MSVC Build Tools sur Windows).
+Tous les raccourcis se consultent et se modifient dans **Réglages → Raccourcis**.
 
 ## Communauté
 
@@ -215,9 +191,9 @@ Il faut [Node.js](https://nodejs.org) 22 ou plus, [Rust](https://rustup.rs) (sta
 
 Bugs et suggestions sont les bienvenus dans les [GitHub Issues](https://github.com/CatVinci-Studio/Textus/issues).
 
-## Contribuer
+## Feuille de route et contributions
 
-[CONTRIBUTING.md](CONTRIBUTING.md) décrit les vérifications de la CI, les conventions de commit et le processus de publication. [docs/TESTING.md](docs/TESTING.md) indique ce que couvrent les tests, et ce qu’ils laissent volontairement de côté. Les échanges se font en anglais ou en chinois.
+[ROADMAP.md](ROADMAP.md) (en anglais) montre où va Textus. Pour compiler Textus, lancer les vérifications ou ouvrir une pull request, commencez par [CONTRIBUTING.md](CONTRIBUTING.md) (en anglais) ; les assistants de programmation IA suivent [AGENTS.md](AGENTS.md). Les échanges se font en anglais ou en chinois.
 
 ## Historique des étoiles
 

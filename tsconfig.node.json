@@ -10,9 +10,11 @@
   },
   "include": [
     "vite.config.ts",
+    "vite.playground.config.ts",
+    "vite.katex-fonts.ts",
+    "vite.katex-fonts.test.ts",
     "playwright.config.ts",
     "e2e",
-    "playwright.readme.config.ts",
-    "playwright.website.config.ts"
+    "playwright.shots.config.ts"
   ]
 }

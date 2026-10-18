@@ -1,4 +1,9 @@
-import { Plugin, PluginKey, type Transaction } from "@milkdown/kit/prose/state";
+import {
+  Plugin,
+  PluginKey,
+  TextSelection,
+  type Transaction,
+} from "@milkdown/kit/prose/state";
 import { Decoration, DecorationSet } from "@milkdown/kit/prose/view";
 import { $prose } from "@milkdown/kit/utils";
 import type { Node as ProseNode, Slice } from "@milkdown/kit/prose/model";
@@ -11,6 +16,7 @@ import type { Settings, ImageNamingMode } from "../../settings/SettingsContext";
 import { isScopedUrl, scopedImageSrc } from "../../platform/ios-files";
 import { imageFilesFromClipboard, imageMimeForPath } from "./pasted-files";
 import { unwrittenImageSrcs } from "../markdown/markdown-output";
+import { DROP_IMAGE_FILES_EVENT } from "../../utils/events";
 
 /**
  * Image support, Typora-style, in two halves:
@@ -22,7 +28,8 @@ import { unwrittenImageSrcs } from "../markdown/markdown-output";
  *   Unsaved drafts have no folder yet; their images land in the app data
  *   dir with an absolute src instead, moved next to the document when it
  *   is first saved (image-migration.ts). An image FILE copied in a file
- *   manager is stored the same way (pasted-files.ts).
+ *   manager is stored the same way (pasted-files.ts), and so is one
+ *   dropped on the window (app/dropped-files.ts).
  *
  * - RENDER: the webview can't load local files directly, so a nodeView
  *   rewrites local srcs through Tauri's asset protocol at display time -
@@ -31,14 +38,34 @@ import { unwrittenImageSrcs } from "../markdown/markdown-output";
  *   asset: URL.
  */
 
+/**
+ * A Markdown image destination is a URL, so other apps write a space as
+ * "%20" (and Chinese as "%E5%9B%BE..."); the file on disk has the decoded
+ * name. convertFileSrc percent-encodes the path itself, so an undecoded
+ * "%20" reached the asset protocol as "%2520" and found nothing (#135). A
+ * malformed escape (a file really named "100%.png") is kept as written.
+ */
+function decodeImagePath(src: string): string {
+  try {
+    return decodeURIComponent(src);
+  } catch {
+    return src;
+  }
+}
+
 export function resolveImageSrc(src: string, docPath: string | null): string {
   // A Windows drive path ("C:\..." / "C:/...") would otherwise read as a
   // single-letter URL scheme to the test below.
-  if (/^[a-z]:[\\/]/i.test(src)) return convertFileSrc(src);
+  if (/^[a-z]:[\\/]/i.test(src)) return convertFileSrc(decodeImagePath(src));
   if (!src || /^[a-z][a-z0-9+.-]*:/i.test(src)) return src; // http(s), data:, asset:, file:, ...
-  if (src.startsWith("/")) return convertFileSrc(src);
+  if (src.startsWith("/")) return convertFileSrc(decodeImagePath(src));
+  // An unsaved document has no folder to resolve against, so a relative
+  // path is left as written (the image shows as missing) and resolves once
+  // the document is saved and reopened. The sidebar's open folder is not
+  // used as a stand-in: the document may well be saved somewhere else, and
+  // an image that showed before saving would then vanish.
   if (!docPath) return src;
-  return convertFileSrc(`${dirname(docPath)}/${src}`);
+  return convertFileSrc(`${dirname(docPath)}/${decodeImagePath(src)}`);
 }
 
 /**
@@ -505,6 +532,36 @@ export function createImagePlugin(options: ImageStore) {
         trs.some((tr) => tr.docChanged)
           ? swapStoredBlobs(state.tr, storedBlobs, changedRanges(trs))
           : null,
+      // Image files dropped on the window: Tauri hands the drop to the app
+      // (app/useFileOpening.ts's useFileDrop), not to this view, so it comes
+      // as a window event. Every tab's editor stays mounted, hidden but the
+      // one on screen - only that one takes them.
+      view: (view) => {
+        const onDrop = (e: Event) => {
+          if (view.dom.offsetParent === null) return;
+          const { paths, point } = (
+            e as CustomEvent<{
+              paths: string[];
+              point: { x: number; y: number };
+            }>
+          ).detail;
+          const at = view.posAtCoords({ left: point.x, top: point.y });
+          // Off the text (the sidebar, the margins): at the caret instead.
+          if (at)
+            view.dispatch(
+              view.state.tr.setSelection(
+                TextSelection.near(view.state.doc.resolve(at.pos)),
+              ),
+            );
+          view.focus();
+          void saveAndInsertImages(view, paths.map(fileImage), options);
+        };
+        window.addEventListener(DROP_IMAGE_FILES_EVENT, onDrop);
+        return {
+          destroy: () =>
+            window.removeEventListener(DROP_IMAGE_FILES_EVENT, onDrop),
+        };
+      },
       props: {
         decorations: (state) => imageParagraphKey.getState(state),
         handlePaste(view, event, slice) {

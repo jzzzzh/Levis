@@ -8,7 +8,7 @@
 //! instance, tabs dragged between windows, the detached chat, the updater,
 //! session restore, argv - exists on desktop only and is gated with
 //! `#[cfg(desktop)]` (tauri-build sets `desktop` / `mobile` per target).
-//! Ungated code is shared. docs/ios/code-map.zh.md has the map.
+//! Ungated code is shared. docs/dev/ios-code-map.md has the map.
 
 mod ai;
 mod app_identity;
@@ -736,12 +736,16 @@ pub fn run() {
             #[cfg(desktop)]
             install_cli_command,
             #[cfg(desktop)]
+            commands::update::check_for_update,
+            #[cfg(desktop)]
             detect_pandoc,
             #[cfg(desktop)]
             export_via_pandoc,
             #[cfg(desktop)]
             export_pdf_native,
             commands::links::open_community_page,
+            commands::links::open_about_link,
+            commands::links::open_tutorials_page,
             #[cfg(desktop)]
             open_pandoc_install_page,
             #[cfg(desktop)]

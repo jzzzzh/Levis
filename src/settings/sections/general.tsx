@@ -1,13 +1,14 @@
 import { errorText } from "../../utils/error-text";
 import { useEffect, useState } from "react";
-import { getVersion } from "@tauri-apps/api/app";
-import { check, type Update } from "@tauri-apps/plugin-updater";
+import type { Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import type { Strings } from "../../i18n/strings";
-import { cli } from "../../platform/ipc";
+import { cli, updater, type UpdateChannel } from "../../platform/ipc";
 import { flushPendingWrites } from "../../storage/pending-writes";
-import { selfUpdateAllowed } from "../../platform/distribution";
+import { checkChannel, selfUpdateAllowed } from "../../platform/distribution";
 import { canAutoUpdate } from "../../platform/capabilities";
+import { useSettings } from "../SettingsContext";
+import { Select } from "../../ui/Select";
 import { SettingRow } from "./controls";
 import { levisImport, type LevisImportStatus } from "../../platform/ipc";
 import type { Lang } from "../../i18n/strings";
@@ -16,33 +17,34 @@ import { itemList, runLevisImport } from "../levis-import";
 // The General category's sections beyond plain settings rows.
 
 /**
- * Current version + a manual "Check for Updates" button. The background
+ * The manual "Check for Updates" button, beside the links in Settings ›
+ * General › About Textus (which shows the version). The background
  * check (useAppUpdate) is silent about being up to date and about errors;
  * a manual check is the opposite - the user asked, so "already latest" and
  * failures both get an explicit answer here. A package-manager build only
  * reports the new version - see platform/distribution.ts.
  */
-export function UpdateSection({ t }: { t: Strings }) {
-  const [version, setVersion] = useState("");
+export function UpdateButton({ t }: { t: Strings }) {
   const [phase, setPhase] = useState<
     "idle" | "checking" | "latest" | "available" | "downloading" | "error"
   >("idle");
   const [message, setMessage] = useState("");
   const [update, setUpdate] = useState<Update | null>(null);
   const [selfUpdate, setSelfUpdate] = useState(true);
+  const { settings } = useSettings();
 
   useEffect(() => {
     if (canAutoUpdate) void selfUpdateAllowed().then(setSelfUpdate);
-    getVersion()
-      .then(setVersion)
-      .catch(() => setVersion(""));
   }, []);
 
   async function checkNow() {
     setPhase("checking");
     setMessage("");
     try {
-      const found = await check();
+      const allowed = await selfUpdateAllowed();
+      const found = await updater.check(
+        checkChannel(settings.updateChannel, allowed),
+      );
       if (found) {
         setUpdate(found);
         setPhase("available");
@@ -83,34 +85,83 @@ export function UpdateSection({ t }: { t: Strings }) {
     }
   }
 
+  // No updater on iOS: the App Store updates it.
+  if (!canAutoUpdate) return null;
+  const busy = phase === "checking" || phase === "downloading";
+  const ready =
+    selfUpdate && (phase === "available" || phase === "downloading");
   return (
-    <SettingRow
-      label={
-        version ? `${t.updateVersionLabel} v${version}` : t.updateVersionLabel
-      }
-      hint={phase === "error" ? undefined : message || undefined}
-      error={phase === "error" ? message : null}
-    >
-      {/* No updater on iOS (App Store updates): the version alone. */}
-      {canAutoUpdate &&
-        (selfUpdate && (phase === "available" || phase === "downloading") ? (
-          <button
-            className="text-button settings-inline-button"
-            onClick={install}
-            disabled={phase === "downloading"}
-          >
-            {t.updateInstall}
-          </button>
-        ) : (
-          <button
-            className="text-button settings-inline-button"
-            onClick={checkNow}
-            disabled={phase === "checking"}
-          >
-            {phase === "checking" ? t.updateChecking : t.updateCheckButton}
-          </button>
-        ))}
-    </SettingRow>
+    <>
+      <button
+        type="button"
+        className="text-button settings-about-link"
+        onClick={ready ? install : checkNow}
+        disabled={busy}
+      >
+        {ready
+          ? t.updateInstall
+          : phase === "checking"
+            ? t.updateChecking
+            : t.updateCheckButton}
+      </button>
+      {/* The answer to the check, under the row of buttons. */}
+      {message && (
+        <div
+          className={`settings-about-status${phase === "error" ? " settings-error" : ""}`}
+          role="status"
+        >
+          {message}
+        </div>
+      )}
+    </>
+  );
+}
+
+/**
+ * Stable or Beta, under the update button in About Textus. Beta also gets
+ * release candidates, always the newest release of either kind; going back
+ * to Stable keeps an installed release candidate until a newer stable
+ * version exists (src-tauri/src/commands/update.rs). Hidden where the app
+ * doesn't install its own updates: iOS (the App Store) and package-manager
+ * builds such as the Arch package, which only report stable versions.
+ */
+export function UpdateChannelRow({ t }: { t: Strings }) {
+  const { settings, setSettings } = useSettings();
+  const [selfUpdate, setSelfUpdate] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (canAutoUpdate) void selfUpdateAllowed().then(setSelfUpdate);
+  }, []);
+
+  if (!canAutoUpdate || !selfUpdate) return null;
+  return (
+    <div className="settings-about-channel">
+      <SettingRow label={t.updateChannelLabel} hint={t.updateChannelHint}>
+        <Select
+          className="settings-select"
+          aria-label={t.updateChannelLabel}
+          value={settings.updateChannel}
+          onChange={(e) =>
+            setSettings({ updateChannel: e.target.value as UpdateChannel })
+          }
+        >
+          <option value="stable">{t.updateChannelStable}</option>
+          <option value="beta">{t.updateChannelBeta}</option>
+        </Select>
+      </SettingRow>
+    </div>
+  );
+}
+
+/** "Install the {command} command…" with the command set as code. */
+function withCommand(label: string) {
+  const [before, after = ""] = label.split("{command}");
+  return (
+    <>
+      {before}
+      <code className="settings-inline-code">textus</code>
+      {after}
+    </>
   );
 }
 
@@ -144,8 +195,7 @@ export function CliCommandSection({ t }: { t: Strings }) {
 
   return (
     <SettingRow
-      label={t.cliCommandLabel}
-      hint={t.cliCommandHint}
+      label={withCommand(t.cliCommandLabel)}
       error={error && `${t.cliCommandFailed} ${error}`}
     >
       {!error && (

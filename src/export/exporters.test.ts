@@ -22,8 +22,13 @@ vi.mock("../ui/app-dialog", () => ({
 
 import type { Strings } from "../i18n/strings";
 import type { DocTab } from "../document/doc-tabs";
-import { cloneEditorContent, exportPdf, pdfLayoutCss } from "./exporters";
-import { MAC_PAGE } from "./paginate";
+import {
+  buildStandaloneHtml,
+  cloneEditorContent,
+  exportPdf,
+  pdfLayoutCss,
+} from "./exporters";
+import { MAC_PAGE, WINDOWS_PAGE } from "./paginate";
 
 function editor(html: string): HTMLElement {
   const root = document.createElement("div");
@@ -44,6 +49,48 @@ describe("cloneEditorContent", () => {
     expect(html).not.toContain("code-block-header");
     expect(html).toContain("Title");
     expect(html).toContain("<pre>x</pre>");
+  });
+
+  it("puts the markdown folded under a <details> back inside it", () => {
+    // What raw-html-preview-plugin.ts draws for "<details><summary>…" +
+    // markdown + "</details>", nested once, the inner one folded.
+    const root0 = editor(
+      '<div class="ProseMirror">' +
+        '<p data-head="0"><span class="raw-html-source raw-html-source-hidden">&lt;details&gt;</span></p>' +
+        '<p class="raw-html-details-in-0">One</p>' +
+        '<p class="raw-html-details-in-0" data-head="9"></p>' +
+        '<p class="raw-html-details-in-0 raw-html-details-in-9 raw-html-details-folded">Two</p>' +
+        '<p class="raw-html-details-in-0 raw-html-details-end">&lt;/details&gt;</p>' +
+        '<p class="raw-html-details-end">&lt;/details&gt;</p>' +
+        "<p>After</p></div>",
+    );
+    // The widget is a <div> inside the head's <p>, which only DOM calls
+    // (as ProseMirror makes) can build.
+    for (const [id, summary, open] of [
+      ["0", "Outer", true],
+      ["9", "Inner", false],
+    ] as const) {
+      const widget = document.createElement("div");
+      widget.className = "raw-html-rendered raw-html-details-head";
+      widget.innerHTML = `<details data-details-head="${id}"><summary>${summary}</summary></details>`;
+      widget.querySelector("details")!.open = open;
+      root0.querySelector(`[data-head="${id}"]`)!.appendChild(widget);
+    }
+    const html = cloneEditorContent(root0);
+    const root = new DOMParser().parseFromString(html, "text/html");
+    const outer = root.querySelector(".ProseMirror > details")!;
+    expect(outer.hasAttribute("open")).toBe(true);
+    expect(outer.querySelector(":scope > summary")?.textContent).toBe("Outer");
+    expect(outer.querySelector(":scope > p")?.textContent).toBe("One");
+    const inner = outer.querySelector(":scope > details")!;
+    expect(inner.hasAttribute("open")).toBe(false);
+    expect(inner.querySelector(":scope > p")?.textContent).toBe("Two");
+    expect(html).not.toContain("raw-html-details-folded");
+    expect(html).not.toContain("&lt;/details&gt;");
+    expect(html).not.toContain("data-details-head");
+    expect(root.querySelector(".ProseMirror > p:last-child")?.textContent).toBe(
+      "After",
+    );
   });
 
   it("turns a resized table's pixel columns into shares of the page width", () => {
@@ -89,16 +136,49 @@ describe("cloneEditorContent", () => {
 });
 
 describe("pdfLayoutCss", () => {
-  it("carries the theme background past the content on Linux's last sheet", () => {
-    // No pinned page geometry (Linux): nothing fills the last sheet to a
-    // page multiple, so the body's shadow has to.
-    expect(pdfLayoutCss(null)).toMatch(
-      /body \{ box-shadow: 0 0 0 \d+px var\(--editor-bg, var\(--bg\)\); \}/,
-    );
+  it("leaves Linux's sheet margins to the GTK page setup", () => {
+    // Any other @page margin made WebKitGTK cut taller pages that still
+    // started below the setup's top margin, so their last lines ran off the
+    // sheet (#68).
+    const css = pdfLayoutCss(null, true);
+    expect(css).toContain("@page { margin: auto; }");
+    expect(css).not.toContain("@page { margin: 0");
   });
 
-  it("leaves paginated renders to their tail spacer", () => {
-    expect(pdfLayoutCss(MAC_PAGE)).not.toContain("box-shadow");
+  it("keeps a zero sheet margin where the margins are laid out", () => {
+    expect(pdfLayoutCss(MAC_PAGE)).toContain("@page { margin: 0; }");
+    expect(pdfLayoutCss(WINDOWS_PAGE, true)).toContain("@page { margin: 0; }");
+  });
+
+  it("prints a white page instead of the theme's page colour", () => {
+    const css = pdfLayoutCss(WINDOWS_PAGE, true);
+    expect(css).toContain("html, body { margin: 0; background: #fff; }");
+    expect(css).toContain("--editor-bg: #fff !important");
+  });
+
+  it("keeps the theme's page colour on macOS", () => {
+    const css = pdfLayoutCss(MAC_PAGE);
+    expect(css).toContain("background: var(--editor-bg, var(--bg));");
+    expect(css).not.toContain("#fff");
+  });
+});
+
+describe("buildStandaloneHtml", () => {
+  it("renders a white page in the theme's light form", () => {
+    const root = document.documentElement;
+    root.setAttribute("data-theme", "dark");
+    root.setAttribute("data-content-theme", "paper");
+    try {
+      expect(buildStandaloneHtml("a", "<p>x</p>", "", true)).toContain(
+        '<html data-theme="light" data-content-theme="paper">',
+      );
+      expect(buildStandaloneHtml("a", "<p>x</p>", "")).toContain(
+        '<html data-theme="dark" data-content-theme="paper">',
+      );
+    } finally {
+      root.removeAttribute("data-theme");
+      root.removeAttribute("data-content-theme");
+    }
   });
 });
 
@@ -130,5 +210,21 @@ describe("exportPdf", () => {
     // message and its button, and the spinner never stopped (#62).
     expect(overlayUnderMessage).toBeNull();
     expect(document.querySelector(".pdf-export-overlay")).toBeNull();
+  });
+
+  it("asks Rust for page numbers only when the setting is on", async () => {
+    document.body.innerHTML =
+      '<div data-active-tab="true"><div class="milkdown"><p>x</p></div></div>';
+    mocks.exportDoc.exportSaveDialog.mockResolvedValue("/tmp/a.pdf");
+    mocks.exportDoc.exportPdfNative.mockReset().mockResolvedValue(undefined);
+    mocks.exportDoc.revealInDir.mockResolvedValue(undefined);
+
+    await exportPdf(tab, t);
+    await exportPdf(tab, t, true);
+
+    const calls = mocks.exportDoc.exportPdfNative.mock.calls;
+    expect(calls.map(([args]) => args.pageNumbers)).toEqual([false, true]);
+    // The page itself is rendered the same either way.
+    expect(calls[0][0].html).toBe(calls[1][0].html);
   });
 });

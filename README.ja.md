@@ -29,19 +29,18 @@
 
 <p align="center">
   <a href="https://github.com/CatVinci-Studio/Textus/releases/latest"><img alt="version" src="https://img.shields.io/github/v/release/CatVinci-Studio/Textus"></a>
-  <a href="https://github.com/CatVinci-Studio/Textus/releases"><img alt="downloads" src="https://img.shields.io/github/downloads/CatVinci-Studio/Textus/total"></a>
-  <a href="https://github.com/CatVinci-Studio/Textus/stargazers"><img alt="stars" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2FCatVinci-Studio%2FTextus&query=%24.stargazers_count&label=stars&logo=github&cacheSeconds=3600"></a>
-  <img alt="platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-teal">
   <a href="./LICENSE"><img alt="license" src="https://img.shields.io/badge/license-MIT-yellow"></a>
   <a href="https://github.com/CatVinci-Studio/Textus/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/CatVinci-Studio/Textus/ci.yml?branch=main&label=CI"></a>
-  <a href="https://textus.catvinci.com/discord"><img alt="Discord" src="https://img.shields.io/discord/1560734722219311294?label=Discord&logo=discord&logoColor=white&color=5865F2"></a>
-  <a href="https://textus.catvinci.com/qq"><img alt="QQ" src="https://img.shields.io/badge/QQ-1128285004-12B7F5?logo=qq&logoColor=white"></a>
-  <a href="https://textus.catvinci.com/wechat"><img alt="WeChat" src="https://img.shields.io/badge/WeChat-group-07C160?logo=wechat&logoColor=white"></a>
-  <img alt="languages" src="https://img.shields.io/badge/languages-10-blue">
-  <a href="https://textus.catvinci.com"><img alt="website" src="https://img.shields.io/badge/website-textus.catvinci.com-8a6d3b"></a>
+  <a href="https://textus.catvinci.com/discord"><img alt="Discord" src="https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white"></a>
+  <a href="https://github.com/jaywcjlove/awesome-mac"><img alt="Awesome Mac" src="https://img.shields.io/badge/Awesome-Mac-FC60A8?logo=awesomelists&logoColor=white"></a>
 </p>
 
 https://github.com/user-attachments/assets/f366f282-e3f9-43d9-9a29-edb6d1ace3f5
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=k_ew9TRljz0">YouTube で見る</a> ·
+  <a href="https://www.bilibili.com/video/BV19LJb6WEWb">Bilibili</a>
+</p>
 
 <p align="center">
   <img src="docs/images/readme/ja/hero.png" alt="『吾輩は猫である』と読書メモを開いたTextus。Textus AIがメモを一文ずつ簡潔にし、修正は余白に並び、本文の横にはレビューのコメントが付いている。" width="860" /><br>
@@ -72,6 +71,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/CatVinci-Studio/arch-repo/ma
 ```
 
 iPhone版とiPad版も、まもなく登場します。[すべてのリリースをGitHubで見る](https://github.com/CatVinci-Studio/Textus/releases)
+
+新しいバージョンをいち早く使いたい場合は、**設定 › 一般 › Textus について** で **アップデートチャンネル** を **ベータ版** にすると、リリース候補版も届きます。いつでも **安定版** に戻せます。戻したあとは、より新しい安定版が出るまで今のバージョンのままです。
 
 ## 執筆
 
@@ -181,32 +182,7 @@ macOS（AppleシリコンとIntel）、Windows、Linuxです。iPhone版とiPad�
 3. 書き始めましょう。手を止めると続きが灰色で現れ、Tab で採用できます。
 4. ウィンドウバーのチャットボタンでAIパネルを開きます。詳しくは **ヘルプ → AI 機能ガイド** を。
 
-| 操作         | ショートカット                  |
-| ---------- | ------------------------ |
-| AIパネル      | Ctrl/⌘+Shift+L           |
-| クイック質問     | Ctrl/⌘+Shift+K           |
-| 今すぐ補完を提案   | Ctrl/⌘+Shift+Space       |
-| 今すぐ文法をチェック | Ctrl/⌘+Shift+G           |
-| 保留中の編集を適用  | Ctrl/⌘+Enter             |
-| 分割表示       | Ctrl/⌘+Shift+E           |
-| 禅モード       | Ctrl/⌘+Shift+J (Esc で終了) |
-| ソースコードモード  | Ctrl/⌘+/                 |
-
-どれも **設定 → ショートカット** で変更できます。
-
-## ソースからビルド
-
-```bash
-git clone https://github.com/CatVinci-Studio/Textus.git
-cd Textus
-npm install
-
-npm run tauri dev     # full Tauri app (Rust shell + Vite renderer)
-npm run tauri build   # bundle .dmg / -setup.exe (NSIS) / .AppImage / .deb / .rpm
-npm run build         # frontend only: type-check (tsc) + vite build
-```
-
-[Node.js](https://nodejs.org) 22 以上、[Rust](https://rustup.rs)（stable）、各プラットフォームのビルドツール（macOS は Xcode CLT、Linux は `libwebkit2gtk-4.1-dev`/`libappindicator3-dev`/`librsvg2-dev`/`patchelf`、Windows は MSVC Build Tools）が必要です。
+ショートカットの一覧と変更は **設定 → ショートカット** から行えます。
 
 ## コミュニティ
 
@@ -215,9 +191,9 @@ npm run build         # frontend only: type-check (tsc) + vite build
 
 不具合の報告や要望は [GitHub Issues](https://github.com/CatVinci-Studio/Textus/issues) へどうぞ。
 
-## コントリビュート
+## ロードマップと開発への参加
 
-CI が実行するチェック、コミットの規約、リリースの手順は [CONTRIBUTING.md](CONTRIBUTING.md) を、テストが何を対象にし、何をあえて対象外にしているかは [docs/TESTING.md](docs/TESTING.md) をご覧ください。やり取りは英語か中国語でお願いします。
+Textus の今後の方向は [ROADMAP.md](ROADMAP.md)（英語）にあります。ビルド、チェックの実行、プルリクエストの作成は [CONTRIBUTING.md](CONTRIBUTING.md)（英語）から始めてください。AI コーディングアシスタントは [AGENTS.md](AGENTS.md) に従います。やり取りは英語か中国語でお願いします。
 
 ## スターの推移
 

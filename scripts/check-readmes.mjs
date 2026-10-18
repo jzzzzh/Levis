@@ -38,14 +38,21 @@ function outline(file) {
   const tableRows = prose.split("\n").filter((l) => l.startsWith("|")).length;
   const links = [...prose.matchAll(/(?:href|src)="([^"]+)"|\]\(([^)]+)\)/g)]
     .map((m) => m[1] ?? m[2])
+    // Badges may differ per language (the Chinese ones show the QQ and
+    // WeChat groups instead of Discord), so their images are not compared.
+    .filter((target) => !target.startsWith("https://img.shields.io/"))
     // Each README links to the other languages, and shows its own
     // language's screenshots.
     .filter((target) => !/^\.\/README/.test(target))
     .map((target) =>
-      target.replace(
-        /\/readme\/(en|zh|zh-hant|ja|ko|es|fr|de|ru|pt)\//,
-        "/readme/*/",
-      ),
+      target
+        .replace(
+          /\/readme\/(en|zh|zh-hant|ja|ko|es|fr|de|ru|pt)\//,
+          "/readme/*/",
+        )
+        // Simplified Chinese links the Chinese roadmap; every other
+        // language the English one.
+        .replace(/^ROADMAP\.zh\.md$/, "ROADMAP.md"),
     );
   const images = [...prose.matchAll(/src="([^"]+\.png)"/g)].map((m) => m[1]);
   return { headings, code, tableRows, links, images };
@@ -72,7 +79,10 @@ for (const file of [reference, ...translations]) {
     );
   // The same links, in any order: a translation may list them in the order
   // its readers want (the Chinese ones put the QQ and WeChat groups first).
-  if (!same([...doc.links].sort(), [...ref.links].sort()))
+  // Compared as sets: a badge and the Community section may both link to
+  // the same group.
+  const unique = (links) => [...new Set(links)].sort();
+  if (!same(unique(doc.links), unique(ref.links)))
     problems.push(
       `${file}: links differ from ${reference}:\n  ${doc.links.join("\n  ")}`,
     );

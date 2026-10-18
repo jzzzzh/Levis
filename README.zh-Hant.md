@@ -29,19 +29,19 @@
 
 <p align="center">
   <a href="https://github.com/CatVinci-Studio/Textus/releases/latest"><img alt="version" src="https://img.shields.io/github/v/release/CatVinci-Studio/Textus"></a>
-  <a href="https://github.com/CatVinci-Studio/Textus/releases"><img alt="downloads" src="https://img.shields.io/github/downloads/CatVinci-Studio/Textus/total"></a>
-  <a href="https://github.com/CatVinci-Studio/Textus/stargazers"><img alt="stars" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2FCatVinci-Studio%2FTextus&query=%24.stargazers_count&label=stars&logo=github&cacheSeconds=3600"></a>
-  <img alt="platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-teal">
   <a href="./LICENSE"><img alt="license" src="https://img.shields.io/badge/license-MIT-yellow"></a>
   <a href="https://github.com/CatVinci-Studio/Textus/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/CatVinci-Studio/Textus/ci.yml?branch=main&label=CI"></a>
-  <a href="https://textus.catvinci.com/discord"><img alt="Discord" src="https://img.shields.io/discord/1560734722219311294?label=Discord&logo=discord&logoColor=white&color=5865F2"></a>
   <a href="https://textus.catvinci.com/qq"><img alt="QQ" src="https://img.shields.io/badge/QQ-1128285004-12B7F5?logo=qq&logoColor=white"></a>
   <a href="https://textus.catvinci.com/wechat"><img alt="WeChat" src="https://img.shields.io/badge/WeChat-group-07C160?logo=wechat&logoColor=white"></a>
-  <img alt="languages" src="https://img.shields.io/badge/languages-10-blue">
-  <a href="https://textus.catvinci.com"><img alt="website" src="https://img.shields.io/badge/website-textus.catvinci.com-8a6d3b"></a>
+  <a href="https://github.com/jaywcjlove/awesome-mac"><img alt="Awesome Mac" src="https://img.shields.io/badge/Awesome-Mac-FC60A8?logo=awesomelists&logoColor=white"></a>
 </p>
 
 https://github.com/user-attachments/assets/f366f282-e3f9-43d9-9a29-edb6d1ace3f5
+
+<p align="center">
+  <a href="https://www.bilibili.com/video/BV19LJb6WEWb">在 B 站觀看</a> ·
+  <a href="https://www.youtube.com/watch?v=k_ew9TRljz0">YouTube</a>
+</p>
 
 <p align="center">
   <img src="docs/images/readme/zh-hant/hero.png" alt="Textus 開著《西遊記》和一段讀書筆記，Textus AI 逐句精簡筆記，每處修改都在頁邊，並在原文旁留下審閱註解" width="860" /><br>
@@ -72,6 +72,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/CatVinci-Studio/arch-repo/ma
 ```
 
 iPhone 與 iPad 版即將推出。[在 GitHub 查看所有版本](https://github.com/CatVinci-Studio/Textus/releases)
+
+想搶先用上新版本？在 **設定 › 一般 › 關於 Textus** 中把 **更新通道** 改為 **測試版**，就會一併收到候選版本；隨時可以改回 **正式版**，之後會停在目前的版本，直到有更新的正式版推出。
 
 ## 寫作
 
@@ -181,32 +183,7 @@ OpenAI · Anthropic · Google Gemini · DeepSeek · xAI · Mistral · Groq · Op
 3. 開始寫作。停筆時，續寫會以灰色文字出現，按 Tab 接受。
 4. 點視窗列裡的對話按鈕開啟 AI 面板。其餘功能請見 **說明 → AI 功能指南**。
 
-| 操作      | 快速鍵                       |
-| ------- | ------------------------- |
-| AI 面板   | Ctrl/⌘+Shift+L            |
-| 快速提問    | Ctrl/⌘+Shift+K            |
-| 立即續寫    | Ctrl/⌘+Shift+Space        |
-| 立即檢查文法  | Ctrl/⌘+Shift+G            |
-| 接受待定的修改 | Ctrl/⌘+Enter              |
-| 分割檢視    | Ctrl/⌘+Shift+E            |
-| 禪模式     | Ctrl/⌘+Shift+J (按 Esc 離開) |
-| 原始碼模式   | Ctrl/⌘+/                  |
-
-以上快速鍵都可以在 **設定 → 快速鍵** 中修改。
-
-## 從原始碼建置
-
-```bash
-git clone https://github.com/CatVinci-Studio/Textus.git
-cd Textus
-npm install
-
-npm run tauri dev     # full Tauri app (Rust shell + Vite renderer)
-npm run tauri build   # bundle .dmg / -setup.exe (NSIS) / .AppImage / .deb / .rpm
-npm run build         # frontend only: type-check (tsc) + vite build
-```
-
-需要 [Node.js](https://nodejs.org) 22 以上、[Rust](https://rustup.rs)（stable）以及各平台的建置工具（macOS 上是 Xcode CLT；Linux 上是 `libwebkit2gtk-4.1-dev`/`libappindicator3-dev`/`librsvg2-dev`/`patchelf`；Windows 上是 MSVC Build Tools）。
+所有快速鍵都可以在 **設定 → 快速鍵** 中查看和修改。
 
 ## 社群
 
@@ -216,9 +193,9 @@ npm run build         # frontend only: type-check (tsc) + vite build
 
 錯誤回報與功能建議也歡迎提到 [GitHub Issues](https://github.com/CatVinci-Studio/Textus/issues)。
 
-## 參與貢獻
+## 路線圖與參與開發
 
-CI 執行的檢查、提交慣例和發布流程請見 [CONTRIBUTING.md](CONTRIBUTING.md)。各測試套件涵蓋了什麼、刻意不涵蓋什麼，請見 [docs/TESTING.md](docs/TESTING.md)。討論可以用中文或英文。
+Textus 接下來的方向見 [ROADMAP.md](ROADMAP.md)（英文）。想自行建置 Textus、執行檢查或提交 PR，請從 [CONTRIBUTING.md](CONTRIBUTING.md)（英文）開始；AI 程式助手請遵循 [AGENTS.md](AGENTS.md)。討論可以用中文或英文。
 
 ## Star 成長趨勢
 

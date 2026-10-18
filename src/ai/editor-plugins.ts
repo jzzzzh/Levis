@@ -14,6 +14,7 @@ import {
 } from "./margin/review-notes-plugin";
 import { createMagicDiaryPlugin } from "./magic-diary/magic-diary-plugin";
 import { resolveStrings } from "../i18n/strings";
+import { sendTourSignal, type TourAi } from "../utils/events";
 import type { RevisionDisplay, Settings } from "../settings/SettingsContext";
 
 export interface PendingEditCallbacks {
@@ -51,29 +52,22 @@ export function withAiPlugins(
       onMount: (el: HTMLElement) => void;
       onUnmount: (el: HTMLElement) => void;
     };
-    /** True while the onboarding tour runs: the typing-triggered plugins go
-     *  quiet so the tour's pre-written suggestions are the only AI on
-     *  screen - first-run users have no account, and a real response
-     *  arriving over a mocked one would derail the script. */
-    aiMuted: { readonly current: boolean };
+    /** The tour's AI while this is its practice tab (utils/events.ts's
+     *  TourAi), else null: muted, the typing-triggered plugins go quiet. */
+    tour: { readonly current: TourAi | null };
     reviewNotes: {
       onChange: (notes: ReviewNote[]) => void;
       onBadge: (id: string, el: HTMLElement) => void;
     };
   },
 ): Editor {
-  const {
-    settings,
-    docPath,
-    pendingEdits,
-    quickAskWidget,
-    aiMuted,
-    reviewNotes,
-  } = options;
+  const { settings, docPath, pendingEdits, quickAskWidget, tour, reviewNotes } =
+    options;
   return editor
     .use(
       createGhostTextPlugin({
-        enabled: () => settings.current.enableCompletion && !aiMuted.current,
+        enabled: () =>
+          settings.current.enableCompletion && tour.current !== "muted",
         provider: () => settings.current.aiProvider,
         model: () =>
           settings.current.writingModels[settings.current.aiProvider] || null,
@@ -82,11 +76,15 @@ export function withAiPlugins(
           docPath: docPath.current,
           workspaceRoot: settings.current.agentWorkspaceRoot || null,
         }),
+        onAccept: () => {
+          if (tour.current) sendTourSignal("completion-accepted");
+        },
       }),
     )
     .use(
       createGrammarCheckPlugin({
-        enabled: () => settings.current.enableGrammarCheck && !aiMuted.current,
+        enabled: () =>
+          settings.current.enableGrammarCheck && tour.current !== "muted",
         provider: () => settings.current.aiProvider,
         model: () =>
           settings.current.writingModels[settings.current.aiProvider] || null,

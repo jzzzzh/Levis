@@ -16,6 +16,10 @@ import {
   type Strings,
 } from "../i18n/strings";
 import { ai, storage } from "../platform/ipc";
+import {
+  UPDATE_CHANNELS,
+  type UpdateChannel,
+} from "../platform/update-channel";
 import { readBoot, readLocalJson } from "../storage/boot";
 import { importLegacyStorage } from "../storage/legacy-import";
 import { trackWrite } from "../storage/pending-writes";
@@ -190,7 +194,7 @@ export interface Settings {
   /// library, agent.md, skills) is read AND the sandbox boundary of the
   /// agent's list_files/read_file tools, so setting it is what lets the
   /// agent reach reference material that doesn't live next to the draft.
-  /// See docs/AI-CONCEPTS.md.
+  /// See docs/design/ai-concepts.md.
   agentWorkspaceRoot: string;
   /// Proxy all AI provider requests route through, as type + host + port
   /// ("none" or an empty host means direct connection). Handed to Rust as a
@@ -228,6 +232,13 @@ export interface Settings {
   /** Suggest an H1 or first content line as a draft's Save As filename. */
   autoSuggestFilename: boolean;
   copyTextMode: CopyTextMode;
+  /** File > Export as PDF numbers each page in its bottom margin
+   *  (commands/pdf_page_numbers.rs). Off by default (#68). */
+  pdfPageNumbers: boolean;
+  /** Which releases the in-app updater offers (Settings › General › About
+   *  Textus): "stable", or "beta" for release candidates as well. Sent with
+   *  each check (src-tauri/src/commands/update.rs). */
+  updateChannel: UpdateChannel;
   /// Set once the first-run tutorial has been shown (or skipped) - belt and
   /// suspenders alongside `isFreshInstall` below, in case a window closes
   /// mid-tutorial before the user reaches the end.
@@ -283,6 +294,8 @@ const DEFAULT_SETTINGS_RAW: Settings = {
   restoreSessionOnStartup: true,
   autoSuggestFilename: true,
   copyTextMode: "readable",
+  pdfPageNumbers: false,
+  updateChannel: "stable",
   onboardingShown: false,
   enableChatHistory: true,
   enableClipboardHistory: true,
@@ -442,6 +455,11 @@ export function normaliseSettings(parsed: Raw | null): Settings {
       theme: THEME_MODES.includes(parsed.theme as ThemeMode)
         ? (parsed.theme as ThemeMode)
         : DEFAULT_SETTINGS.theme,
+      updateChannel: UPDATE_CHANNELS.includes(
+        parsed.updateChannel as UpdateChannel,
+      )
+        ? (parsed.updateChannel as UpdateChannel)
+        : DEFAULT_SETTINGS.updateChannel,
       // Any profile string is kept - a newer build's may not be in this
       // build's list - but it has to be one.
       writingConventions:

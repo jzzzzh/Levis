@@ -1,3 +1,4 @@
+import { AboutSection } from "./sections/about";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import {
@@ -22,11 +23,7 @@ import {
   VERBATIM_INPUT,
 } from "./sections/controls";
 import { ChevronIcon, CloseIcon } from "../ui/icons";
-import {
-  UpdateSection,
-  CliCommandSection,
-  LevisImportSection,
-} from "./sections/general";
+import { CliCommandSection, LevisImportSection } from "./sections/general";
 import { links } from "../platform/ipc";
 import { ThemeSection } from "./sections/theme";
 import { ProviderListPanel } from "./sections/providers";
@@ -53,6 +50,7 @@ import { emitMenuEvent } from "../platform/menu-events";
 import type { MenuChecks } from "../app/app-menu-model";
 import {
   canDetachChat,
+  canExportPdf,
   canInstallCliCommand,
   canPickFolder,
   canRevealInFileManager,
@@ -120,6 +118,9 @@ export function SettingsPanel({
 }: SettingsPanelProps) {
   const { settings, setSettings, t } = useSettings();
   const [category, setCategory] = useState<Category>("general");
+  // General › About Textus: a page of its own inside General, with a way
+  // back, on the desktop and the phone alike.
+  const [aboutOpen, setAboutOpen] = useState(false);
   // Closing Settings on a phone leaves the keyboard down: the user is
   // going back to the page, not necessarily to typing.
   const modal = useModalDialog(onClose, true, undefined, false);
@@ -202,15 +203,19 @@ export function SettingsPanel({
             />
             <HelpRow label={t.menuHelpAgent} onOpen={() => openHelp("agent")} />
             <HelpRow
+              label={t.menuHelpTutorials}
+              onOpen={() => void links.openTutorialsPage(settings.language)}
+            />
+            <HelpRow
               label={t.menuHelpCommunity}
-              onOpen={() => void links.openCommunityPage()}
+              onOpen={() => void links.openCommunityPage(settings.language)}
             />
           </SettingsGroup>
 
           <SettingsGroup title={t.generalSystemLabel}>
             {canInstallCliCommand && <CliCommandSection t={t} />}
             <LevisImportSection t={t} lang={settings.language} />
-            <UpdateSection t={t} />
+            <HelpRow label={t.aboutTextus} onOpen={() => setAboutOpen(true)} />
           </SettingsGroup>
         </>
       )}
@@ -283,6 +288,15 @@ export function SettingsPanel({
                 <option value="markdown">{t.copyTextModeMarkdown}</option>
               </Select>
             </SettingRow>
+            {/* No PDF export on the phone (canExportPdf). */}
+            {canExportPdf && (
+              <ToggleRow
+                label={t.pdfPageNumbersLabel}
+                hint={t.pdfPageNumbersHint}
+                checked={settings.pdfPageNumbers}
+                onChange={(v) => setSettings({ pdfPageNumbers: v })}
+              />
+            )}
           </SettingsGroup>
           <SettingsGroup title={t.imageStorageGroupLabel}>
             <ImageStorageSection t={t} />
@@ -456,7 +470,7 @@ export function SettingsPanel({
           {/* Project files, writing instructions and skills only reach
               conversations, so with chat off there is nothing here to set.
               (Completion still follows the project's style profile and
-              library - see docs/AI-CONCEPTS.md.) */}
+              library - see docs/design/ai-concepts.md.) */}
           {settings.enableAskAi && (
             <>
               <SettingsGroup title={t.agentPersonalizationGroupLabel}>
@@ -622,6 +636,7 @@ export function SettingsPanel({
                 className={`settings-nav-item ${category === c.id ? "settings-nav-item-active" : ""}`}
                 onClick={(e) => {
                   setCategory(c.id);
+                  setAboutOpen(false);
                   // On a phone the tabs are one row that scrolls sideways;
                   // in a long language the chosen one can be half out of
                   // view.
@@ -636,17 +651,36 @@ export function SettingsPanel({
             ))}
           </nav>
 
-          <div
-            className="settings-content"
-            key={category}
-            role="region"
-            aria-label={categories.find((c) => c.id === category)?.label}
-          >
-            <h1 className="settings-category-title">
-              {categories.find((c) => c.id === category)?.label}
-            </h1>
-            {renderCategory(category)}
-          </div>
+          {aboutOpen ? (
+            <div
+              className="settings-content"
+              key="about"
+              role="region"
+              aria-label={t.navAbout}
+            >
+              <button
+                type="button"
+                className="text-button settings-back-button"
+                onClick={() => setAboutOpen(false)}
+              >
+                <ChevronIcon className="settings-back-chevron" />
+                {t.navGeneral}
+              </button>
+              <AboutSection t={t} />
+            </div>
+          ) : (
+            <div
+              className="settings-content"
+              key={category}
+              role="region"
+              aria-label={categories.find((c) => c.id === category)?.label}
+            >
+              <h1 className="settings-category-title">
+                {categories.find((c) => c.id === category)?.label}
+              </h1>
+              {renderCategory(category)}
+            </div>
+          )}
         </div>
       </div>
     </div>

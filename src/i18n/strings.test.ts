@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { normalize } from "../onboarding/tutorial-mock-agent";
 import { pluralCategories } from "./plural";
 import {
   LANGS,
@@ -12,7 +11,7 @@ import {
   type StringKey,
 } from "./strings";
 
-// Every language's file against English (docs/TRANSLATING.md): what a
+// Every language's file against English (docs/dev/translating.md): what a
 // translation may and must contain, whoever wrote it.
 
 const english = LOCALES.en.default as Record<string, string | Plural>;
@@ -41,13 +40,7 @@ describe("the languages", () => {
     );
   });
 
-  it("fall back to English for whatever they leave out", () => {
-    const untranslated = LANGS.find(
-      (lang) => Object.keys(LOCALES[lang].default).length === 0,
-    );
-    if (untranslated)
-      expect(resolveStrings(untranslated)).toEqual(resolveStrings("en"));
-    // An unknown code - a newer build's - is English too.
+  it("fall back to English for an unknown code - a newer build's", () => {
     expect(resolveStrings("xx" as never)).toBe(resolveStrings("en"));
   });
 });
@@ -102,46 +95,4 @@ describe.each(LANGS.filter((lang) => lang !== "en"))("%s", (lang) => {
       );
       expect(missing).toEqual([]);
     });
-});
-
-// The tutorial's practice exercises are scripted per language: the app
-// grades what the learner types against these strings, so they have to fit
-// together the way useTutorialDocumentEvaluation and tutorial-mock-agent
-// read them. Checked on the resolved strings - what the learner sees.
-describe.each(LANGS)("the tutorial exercises in %s", (lang) => {
-  const t = resolveStrings(lang);
-
-  it("completion: the suggestion continues the sentence typed", () => {
-    const target = t.tutorialCompletionTarget;
-    expect(target.trim()).toBe(target);
-    expect(t.tutorialCompletionSuggestion.trim()).toBeTruthy();
-    // Typing the sentence must not already count as accepting.
-    expect(target).not.toContain(t.tutorialCompletionSuggestion);
-  });
-
-  it("grammar: the mistake is in the sentence, once, and the fix differs", () => {
-    const target = t.tutorialGrammarTarget;
-    const original = t.tutorialGrammarOriginal;
-    expect(target.trim()).toBe(target);
-    expect(target.split(original).length - 1).toBe(1);
-    expect(t.tutorialGrammarSuggestion).not.toBe(original);
-    const corrected = target.replace(original, t.tutorialGrammarSuggestion);
-    // Typing the sentence must not already count as the fix.
-    expect(target).not.toContain(corrected);
-  });
-
-  it("edit: the prompt is recognised, the revision is shorter and new", () => {
-    const target = t.tutorialAgentEditTarget;
-    const suggestion = t.tutorialAgentEditSuggestion;
-    expect(target.trim()).toBe(target);
-    expect([...suggestion].length).toBeLessThan([...target].length);
-    // Typing the sentence must not already count as the applied edit.
-    expect(target).not.toContain(suggestion);
-    // The mock agent matches the prompt with punctuation and spacing
-    // stripped: something must be left, and the chat lesson's question
-    // must not match it.
-    const prompt = normalize(t.tutorialAgentEditPrompt);
-    expect(prompt).toBeTruthy();
-    expect(normalize(t.tutorialAgentChatPrompt)).not.toContain(prompt);
-  });
 });

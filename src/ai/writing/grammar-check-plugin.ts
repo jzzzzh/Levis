@@ -6,6 +6,7 @@ import { $prose } from "@milkdown/kit/utils";
 import { createDebouncedTask } from "./debounced-task";
 import { scalarToUtf16Offset, textOffsetToDocPos } from "../doc-text";
 import { isLargeDoc } from "../../editor/large-doc";
+import type { FoldAttention } from "../../editor/html/raw-html-preview-plugin";
 import { ai } from "../../platform/ipc";
 import { AiNoticeError } from "../../utils/error-text";
 
@@ -85,26 +86,6 @@ export async function triggerGrammarCheckNow(
   }
   if (!issues?.length) throw new AiNoticeError("grammar-no-issues");
 
-  view.dispatch(
-    view.state.tr.setMeta(
-      grammarKey,
-      paragraphMeta(contentStart, para, issues),
-    ),
-  );
-}
-
-/// Underlines a PRE-WRITTEN set of issues in the cursor's paragraph - the
-/// decoration half of triggerGrammarCheckNow above, without the backend
-/// call. Used by the onboarding tutorial's grammar step, which has no AI
-/// account to call yet.
-export function showGrammarIssues(
-  view: EditorView,
-  issues: GrammarIssue[],
-): void {
-  const { $from } = view.state.selection;
-  const para = $from.parent;
-  if (!para.isTextblock) return;
-  const contentStart = $from.start($from.depth);
   view.dispatch(
     view.state.tr.setMeta(
       grammarKey,
@@ -260,6 +241,19 @@ export function createGrammarCheckPlugin(options: {
     () =>
       new Plugin<DecorationSet>({
         key: grammarKey,
+        // An underline that lands in text folded in a <details> (a check
+        // asked for by hand with the caret there) opens it.
+        foldAttention: ((state) =>
+          (grammarKey.getState(state) as DecorationSet | undefined)
+            ?.find()
+            .map((deco) => {
+              const spec = deco.spec as GrammarDecorationSpec;
+              return {
+                key: `grammar:${spec.issue}\n${spec.original ?? ""}`,
+                from: deco.from,
+                to: deco.to,
+              };
+            }) ?? []) satisfies FoldAttention,
         state: {
           init: () => DecorationSet.empty,
           apply(tr, prev) {
