@@ -160,29 +160,7 @@ fn native_asr_contracts_validate_format_language_and_nesting() {
     .is_err());
 }
 #[test]
-fn image_gateways_use_their_documented_parameters() {
-    let body = image_payload(&config("siliconflow"), "tree", "1024x1024", None).unwrap();
-    assert_eq!(
-        body,
-        json!({"model":"test-model","prompt":"tree","image_size":"1024x1024"})
-    );
-    let body = image_payload(&config("together"), "tree", "1536x1024", None).unwrap();
-    assert_eq!(body["width"], 1536);
-    assert_eq!(body["height"], 1024);
-    assert!(body.get("size").is_none());
-    let body = image_payload(&config("dashscope"), "tree", "1024x1536", None).unwrap();
-    assert_eq!(body["parameters"]["size"], "1024*1536");
-    assert_eq!(body["input"]["messages"][0]["content"][0]["text"], "tree");
-    let body = image_payload(&config("gemini"), "tree", "1536x1024", None).unwrap();
-    assert_eq!(
-        body["generationConfig"]["imageConfig"]["aspectRatio"],
-        "3:2"
-    );
-    let body = image_payload(&config("volcengine"), "tree", "1024x1024", None).unwrap();
-    assert_eq!(body["sequential_image_generation"], "disabled");
-    assert_eq!(body["size"], "2048x2048");
-    assert!(image_payload(&config("volcengine"), "tree", "1536x1024", None).is_err());
-    assert!(body.get("n").is_none());
+fn result_urls_upgrade_only_dashscope_oss_and_downloads_need_public_hosts() {
     assert_eq!(
         secure_result_url("http://result.oss-cn-beijing.aliyuncs.com/audio.wav?sign=x").unwrap(),
         "https://result.oss-cn-beijing.aliyuncs.com/audio.wav?sign=x"
@@ -190,11 +168,31 @@ fn image_gateways_use_their_documented_parameters() {
     assert!(secure_result_url("http://127.0.0.1/audio.wav")
         .unwrap()
         .starts_with("http:"));
+    for address in [
+        "127.0.0.1",
+        "10.2.3.4",
+        "172.16.0.1",
+        "192.168.1.1",
+        "169.254.169.254",
+        "0.0.0.0",
+        "100.64.0.1",
+        "198.18.0.1",
+        "224.0.0.1",
+        "::1",
+        "::ffff:127.0.0.1",
+        "fc00::1",
+        "fe80::1",
+        "2001:db8::1",
+    ] {
+        assert!(!public_ip(address.parse().unwrap()), "{address}");
+    }
+    assert!(public_ip("8.8.8.8".parse().unwrap()));
+    assert!(public_ip("2606:4700:4700::1111".parse().unwrap()));
 }
 #[test]
 fn settings_reject_unsupported_capabilities_and_language_shapes() {
     for (p, c) in [
-        ("deepgram", "image"),
+        ("deepgram", "speech"),
         ("gemini", "stt"),
         ("system", "tts"),
         ("volcengine", "stt"),
@@ -217,7 +215,7 @@ fn settings_reject_unsupported_capabilities_and_language_shapes() {
 fn capabilities_and_auth_do_not_mislabel_native_protocols() {
     assert!(supports("deepgram", "stt"));
     for (p, c) in [
-        ("deepgram", "image"),
+        ("deepgram", "speech"),
         ("gemini", "stt"),
         ("system", "tts"),
         ("volcengine", "tts"),

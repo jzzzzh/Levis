@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { DocumentDraft, DraftOperation } from "./document-draft";
 import type { EditProposal } from "../types";
 import type { AgentConversation } from "../chat/useAgentConversation";
-import type { PendingImage } from "./draft-diff";
 import { workspaceLabels } from "./labels";
 import { HamburgerIcon, PlusIcon } from "../../ui/icons";
 import type { Suggestion } from "./assist";
@@ -13,7 +12,6 @@ import { WorkspacePreview } from "./WorkspacePreview";
 import { useColumnGlide, useTasksPanel } from "./useWorkspaceLayout";
 import "./workspace.css";
 
-const NO_PENDING_IMAGES: PendingImage[] = [];
 const NO_REJECTED: DraftOperation[] = [];
 const ALWAYS_SETTLED = () => true;
 
@@ -27,23 +25,17 @@ export function AgentWorkspace({
   children,
   onAccept,
   onReject,
-  onImageAccept,
-  onImageReject,
   rejected = NO_REJECTED,
   onRestore,
   onDecidePart,
   onUndoReject,
   isSettled = ALWAYS_SETTLED,
   tools,
-  mediaPreview,
-  pendingMedia = false,
-  onStop,
   toolLabels = {},
   documentId,
   suggestions,
   aiSuggestions = false,
   autoWriter,
-  pendingImages = NO_PENDING_IMAGES,
 }: {
   language: string;
   documentPath: string | null;
@@ -54,10 +46,6 @@ export function AgentWorkspace({
   children: ReactNode;
   onAccept: (callId?: string) => void;
   onReject: (callId?: string) => void;
-  /** A finished picture shown in the draft: put in (with its paragraph)
-   *  or dropped. */
-  onImageAccept?: (jobId: string) => void;
-  onImageReject?: (jobId: string) => void;
   /** This task's rejected changes, listed with 采纳 so one can be taken
    *  after all (onRestore). */
   rejected?: DraftOperation[];
@@ -71,9 +59,6 @@ export function AgentWorkspace({
    *  waits, the rest can be decided while the Agent keeps working. */
   isSettled?: (callId: string) => boolean;
   tools?: ReactNode;
-  mediaPreview?: ReactNode;
-  pendingMedia?: boolean;
-  onStop?: () => void;
   /** Friendly names for tool calls (chat-labels' toolActivity). */
   toolLabels?: Record<string, string>;
   /** This document's identity, to tell its own past tasks from others'. */
@@ -84,8 +69,6 @@ export function AgentWorkspace({
   aiSuggestions?: boolean;
   /** The auto-writing panel while it is open (AutoWriter.tsx). */
   autoWriter?: ReactNode;
-  /** Pictures on their way, shown where they will go (draft-diff.ts). */
-  pendingImages?: PendingImage[];
 }) {
   const labels = workspaceLabels(language);
   const [notice, setNotice] = useState(false);
@@ -99,7 +82,7 @@ export function AgentWorkspace({
       workspaceOutline([...conversation.history, ...(streamingTurns ?? [])]),
     [conversation.history, streamingTurns],
   );
-  const hasDraft = pending.length > 0 || pendingMedia;
+  const hasDraft = pending.length > 0;
   // The panel can be tucked away to read the conversation; a new change
   // brings it back.
   const [collapsed, setCollapsed] = useState(false);
@@ -114,7 +97,7 @@ export function AgentWorkspace({
       ? "ready"
       : "idle";
   const guarded = (action: () => void) => {
-    if (pending.length || pendingMedia) {
+    if (hasDraft) {
       setNotice(true);
       return;
     }
@@ -152,16 +135,6 @@ export function AgentWorkspace({
           <PlusIcon />
           {labels.newDocument}
         </button>
-        {/* The composer's own Stop covers a running reply; this one is for
-            images still generating after the reply ended. */}
-        {pendingMedia && !conversation.busy && (
-          <button
-            className="workspace-button is-danger"
-            onClick={onStop ?? conversation.stop}
-          >
-            {labels.stop}
-          </button>
-        )}
         {/* Write → is in the window bar, mirroring Write's "← Agent". */}
       </header>
       <div className="workspace-columns">
@@ -238,13 +211,9 @@ export function AgentWorkspace({
           preview={preview}
           conflict={conflict}
           rejected={rejected}
-          pendingImages={pendingImages}
           isSettled={isSettled}
-          mediaPreview={mediaPreview}
           onAccept={onAccept}
           onReject={onReject}
-          onImageAccept={onImageAccept}
-          onImageReject={onImageReject}
           onRestore={onRestore}
           onDecidePart={onDecidePart}
           onUndoReject={onUndoReject}

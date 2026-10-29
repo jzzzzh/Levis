@@ -20,8 +20,6 @@ import {
   markDraftChanges,
   withChangeActions,
   type ChangeTarget,
-  withImagePlaceholders,
-  type PendingImage,
 } from "./draft-diff";
 import type { workspaceLabels } from "./labels";
 
@@ -86,18 +84,13 @@ export function useDraftDocument({
   draft,
   preview,
   rejected,
-  pendingImages,
   labels,
-  imageActions,
 }: {
   documentPath: string | null;
   draft: DocumentDraft | null;
   preview: string;
   rejected: DraftOperation[];
-  pendingImages: PendingImage[];
   labels: ReturnType<typeof workspaceLabels>;
-  /** Whether ready pictures get their own 采纳 / 跳过. */
-  imageActions: boolean;
 }) {
   // The document panel renders the markdown itself: its pictures' paths
   // (relative to the document's folder, or absolute for an unsaved one)
@@ -127,8 +120,8 @@ export function useDraftDocument({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [baseMarkdown, katexReady],
   );
-  // One rendering for the document and the draft: the draft's changes
-  // marked, pictures still being made shown where they will go.
+  // One rendering for the document and the draft, the draft's changes
+  // marked.
   const pendingOps = draft?.operations;
   const changeTargets = useMemo(
     () => changeTargetsOf(pendingOps, rejected),
@@ -142,30 +135,13 @@ export function useDraftDocument({
       changes,
       inner: {
         __html: withImageSrc(
-          withChangeActions(
-            withImagePlaceholders(
-              html,
-              pendingImages,
-              labels.imagePending,
-              labels.imageReady,
-              imageActions
-                ? {
-                    accept: labels.take,
-                    reject: labels.skip,
-                    skipped: labels.imageSkipped,
-                    approved: labels.imageApproved,
-                  }
-                : undefined,
-            ),
-            draftPreview ? changeTargets : [],
-            {
-              accept: labels.take,
-              reject: labels.dontTake,
-              acceptPart: labels.takePart,
-              rejectPart: labels.dontTakePart,
-              restore: labels.restore,
-            },
-          ),
+          withChangeActions(html, draftPreview ? changeTargets : [], {
+            accept: labels.take,
+            reject: labels.dontTake,
+            acceptPart: labels.takePart,
+            rejectPart: labels.dontTakePart,
+            restore: labels.restore,
+          }),
           scoped ? undefined : imageSrc,
         ),
       },
@@ -175,7 +151,6 @@ export function useDraftDocument({
     draftPreview,
     baseHtml,
     shownDocument,
-    pendingImages,
     changeTargets,
     imageSrc,
     scoped,

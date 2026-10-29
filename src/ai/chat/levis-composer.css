@@ -1,10 +1,6 @@
 /* Levis: the Agent composer's tools menu, its chips and dictation
    (levis-chat.tsx, ai/workspace/AgentTools.tsx). */
 
-.inline-chat-toolbar .inline-dictation {
-  margin-left: 0;
-}
-
 .composer-chip {
   display: inline-flex;
   align-items: center;

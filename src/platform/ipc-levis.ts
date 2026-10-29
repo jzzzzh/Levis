@@ -10,9 +10,9 @@ import { auth } from "./ipc-auth";
  * Plain `invoke`: these commands are not in the specta bindings.
  */
 
-/** Mirrors media/provider.rs and media/speech.rs. Credentials stay in
- *  provider_keys.json. */
-export type MediaCapability = "stt" | "tts" | "image";
+/** Mirrors media/provider.rs and media/speech.rs: speech to text and back.
+ *  Credentials stay in provider_keys.json. */
+export type MediaCapability = "stt" | "tts";
 export interface MediaProviderConfig {
   credentialSource?: "separate" | "minimax-chat";
   provider:
@@ -27,8 +27,7 @@ export interface MediaProviderConfig {
     | "azure-speech"
     | "siliconflow"
     | "groq"
-    | "together"
-    | "volcengine";
+    | "together";
   language?: string | null;
   playbackRate?: number;
   endpoint: string;
@@ -42,58 +41,10 @@ export interface SpeechAudio {
   dataBase64: string;
   mime: string;
 }
-/** Mirrors media/jobs.rs; authorization is outside the model's tool
- *  arguments. */
-export interface ImageTaskPermission {
-  generationId: string;
-  taskId: string;
-  documentId: string;
-  baseRevision: number;
-  allowAutomatic: boolean;
-}
-export interface ImageGenerationRequest {
-  prompt: string;
-  anchor: string;
-  alt: string;
-  caption?: string | null;
-  size?: string | null;
-  quality?: string | null;
-}
-export interface ImageJob {
-  generationId?: string;
-  jobId: string;
-  taskId: string;
-  documentId: string;
-  baseRevision: number;
-  sequence: number;
-  request: ImageGenerationRequest;
-  status:
-    | "queued"
-    | "running"
-    | "ready"
-    | "failed"
-    | "cancelled"
-    | "preparing"
-    | "prepared"
-    | "committed";
-  previewPath: string | null;
-  error: string | null;
-  model: string | null;
-  width: number | null;
-  height: number | null;
-  assetSrc: string | null;
-}
-
 /** Fired after a media provider is configured, for open settings rows. */
 export const MEDIA_SETTINGS_CHANGE = "textus-media-settings-change";
 
 export const media = {
-  cancelImageGeneration: (permission: ImageTaskPermission) =>
-    call<void>("media_cancel_image_generation", { permission }),
-  rebaseImageAssets: (
-    documentId: string,
-    mappings: { old: string; new: string }[],
-  ) => call<void>("media_rebase_image_assets", { documentId, mappings }),
   providers: () => call<MediaProviders>("media_provider_status"),
   configure: async (
     capability: MediaCapability,
@@ -123,26 +74,6 @@ export const media = {
   synthesize: (requestId: string, text: string, voice: string | null = null) =>
     aiCall<SpeechAudio>("media_synthesize", { requestId, text, voice }),
   cancel: (requestId: string) => call<void>("media_cancel", { requestId }),
-  startImage: (
-    permission: ImageTaskPermission,
-    request: ImageGenerationRequest,
-  ) => aiCall<ImageJob>("media_start_image", { permission, request }),
-  imageJobs: (documentId: string) =>
-    call<ImageJob[]>("media_image_jobs", { documentId }),
-  cancelImage: (jobId: string) => call<void>("media_cancel_image", { jobId }),
-  /** The prompt a Levis-generated image came from, by its src; null for
-   *  other images. */
-  imagePrompt: (src: string) =>
-    call<{
-      prompt: string;
-      model: string | null;
-      width: number | null;
-      height: number | null;
-    } | null>("media_image_prompt", { src }),
-  prepareImage: (jobId: string, docPath: string | null) =>
-    call<string>("media_prepare_image", { jobId, docPath }),
-  finishImage: (jobId: string, accepted: boolean) =>
-    call<void>("media_finish_image", { jobId, accepted }),
 };
 
 /** One file of the project folder (ai::project::ProjectEntry). */

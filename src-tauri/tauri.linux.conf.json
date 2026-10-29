@@ -26,9 +26,6 @@
           "libayatana-appindicator3-1"
         ]
       }
-    },
-    "resources": {
-      "resources/harness/": "harness/"
     }
   }
 }

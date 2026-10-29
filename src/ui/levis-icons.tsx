@@ -2,13 +2,6 @@
 
 type IconProps = { className?: string };
 
-const IMAGE_EXTS = new Set(["png", "jpg", "jpeg", "gif", "svg", "webp", "bmp"]);
-
-/** A picture file, by its extension. */
-export function isImageName(name: string): boolean {
-  return IMAGE_EXTS.has(name.split(".").pop()?.toLowerCase() ?? "");
-}
-
 export function SparkleIcon({ className }: IconProps) {
   return (
     <svg

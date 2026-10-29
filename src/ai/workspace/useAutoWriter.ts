@@ -5,7 +5,6 @@ import { errorText } from "../../utils/error-text";
 import { quickText } from "./assist";
 import type { AutoWriteRequest } from "./useProjectMaterial";
 import {
-  ensureIllustrated,
   parsePlan,
   pictureSrc,
   planMaterial,
@@ -22,7 +21,7 @@ export interface AutoWriterHost {
   busy: boolean;
   /** Sends one create-mode request; resolves once its proposals are in the
    *  draft. False when it could not be sent. */
-  send: (message: string, allowImages: boolean) => Promise<boolean>;
+  send: (message: string) => Promise<boolean>;
   /** Changes waiting in the draft right now. */
   pending: () => number;
   /** The same, as of this render: a change decided in the draft (its
@@ -45,7 +44,7 @@ export function useAutoWriter(host: AutoWriterHost, request: AutoWriteRequest) {
   const { settings } = useSettings();
   const zh = settings.language.startsWith("zh");
   const root = settings.agentWorkspaceRoot || null;
-  const { folder, material, pictures, extra, images } = request;
+  const { folder, material, pictures, extra } = request;
   // Asked at the outline, where the writing is about to start.
   const [eachSection, setEachSection] = useState(true);
   const [reading, setReading] = useState<string | null>(null);
@@ -97,11 +96,10 @@ export function useAutoWriter(host: AutoWriterHost, request: AutoWriteRequest) {
       const reply = await quickText(
         settings,
         "",
-        planningPrompt(planMaterial(texts), extra, zh, images, pictures),
+        planningPrompt(planMaterial(texts), extra, zh, pictures),
         crypto.randomUUID(),
       );
-      const parsed = parsePlan(reply, pictures);
-      const next = parsed && images ? ensureIllustrated(parsed) : parsed;
+      const next = parsePlan(reply, pictures);
       if (!next)
         throw new Error(
           zh
@@ -158,7 +156,6 @@ export function useAutoWriter(host: AutoWriterHost, request: AutoWriteRequest) {
         plan,
         index,
         {
-          images,
           first: index === 0 && states.every((s) => s !== "done"),
           revision,
           pictureSrc:
@@ -168,7 +165,6 @@ export function useAutoWriter(host: AutoWriterHost, request: AutoWriteRequest) {
         },
         zh,
       ),
-      images && section.image && !section.picture,
     );
     const takenAlready =
       hostRef.current.acceptedCount() > acceptedAtReview.current;

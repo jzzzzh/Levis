@@ -121,7 +121,6 @@ export function useLevisWorkspace(props: LevisWorkspaceProps) {
     sendContext: chat.bridge.panelSendContext,
     showProposals: chat.proposals.showProposals,
     stopTask,
-    voiceLanguage: settings.language,
   });
 
   const homeEmpty =
@@ -156,3 +155,5 @@ export function useLevisWorkspace(props: LevisWorkspaceProps) {
     labels,
   };
 }
+
+export type LevisWorkspaceState = ReturnType<typeof useLevisWorkspace>;

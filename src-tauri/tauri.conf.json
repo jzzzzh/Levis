@@ -4,9 +4,9 @@
   "version": "1.3.0",
   "identifier": "com.catvinci.textus",
   "build": {
-    "beforeDevCommand": "node scripts/prepare-harness.mjs && npm run dev",
+    "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "node scripts/prepare-harness.mjs && npm run build",
+    "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
   },
   "app": {

@@ -22,20 +22,6 @@ describe("toPandocMarkdown", () => {
     );
   });
 
-  it("drops an image's rotation, which pandoc has no attribute for", () => {
-    expect(
-      toPandocMarkdown('![x](a.png "Cap {textus-width=50% textus-rotate=90}")'),
-    ).toBe('![x](a.png "Cap"){width=50%}');
-    expect(toPandocMarkdown('![x](a.png "{textus-rotate=180}")')).toBe(
-      "![x](a.png)",
-    );
-    expect(
-      toPandocMarkdown(
-        '<img src="a.png" title="Cap {textus-rotate=90}" width="50%">',
-      ),
-    ).toBe('![](a.png "Cap"){width=50%}');
-  });
-
   it("turns a sized <img> into an image with a width attribute", () => {
     expect(
       toPandocMarkdown('<img src="assets/a.png" alt="图" width="50%">'),

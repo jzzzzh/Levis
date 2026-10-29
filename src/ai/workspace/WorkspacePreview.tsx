@@ -1,7 +1,6 @@
-import type { MouseEvent, ReactNode } from "react";
+import type { MouseEvent } from "react";
 import type { DocumentDraft, DraftOperation } from "./document-draft";
 import type { EditProposal } from "../types";
-import type { PendingImage } from "./draft-diff";
 import type { workspaceLabels } from "./labels";
 import { ChevronIcon } from "../../ui/icons";
 import { useDraftDocument } from "./useDraftDocument";
@@ -11,26 +10,16 @@ type Labels = ReturnType<typeof workspaceLabels>;
 interface DecisionHandlers {
   onAccept: (callId?: string) => void;
   onReject: (callId?: string) => void;
-  onImageAccept?: (jobId: string) => void;
-  onImageReject?: (jobId: string) => void;
   onDecidePart?: (callId: string, part: number, take: boolean) => void;
   onUndoReject?: (callId: string) => void;
 }
 
 /** The document panel's clicks: its markup's own buttons (draft-diff.ts) -
- *  each change's 采纳 / 不采纳, a paragraph's, a rejected one's 恢复, and the
- *  ready pictures'. */
+ *  each change's 采纳 / 不采纳, a paragraph's, and a rejected one's 恢复. */
 function onDocumentClick(
   event: MouseEvent,
   conflict: boolean,
-  {
-    onAccept,
-    onReject,
-    onImageAccept,
-    onImageReject,
-    onDecidePart,
-    onUndoReject,
-  }: DecisionHandlers,
+  { onAccept, onReject, onDecidePart, onUndoReject }: DecisionHandlers,
 ) {
   // Each change's own 采纳 / 不采纳 (draft-diff.ts): markup too.
   const change = (event.target as HTMLElement).closest<HTMLElement>(
@@ -55,19 +44,7 @@ function onDocumentClick(
   const back = (event.target as HTMLElement).closest<HTMLElement>(
     "[data-restore]",
   );
-  if (back?.dataset.restore) {
-    onUndoReject?.(back.dataset.restore);
-    return;
-  }
-  // The ready pictures' buttons (draft-diff.ts): markup, not React.
-  const button = (event.target as HTMLElement).closest<HTMLElement>(
-    "[data-image-action]",
-  );
-  const job = button?.dataset.job;
-  if (!job) return;
-  if (button.dataset.imageAction === "accept") {
-    if (!conflict) onImageAccept?.(job);
-  } else onImageReject?.(job);
+  if (back?.dataset.restore) onUndoReject?.(back.dataset.restore);
 }
 
 /** The draft's changes listed one by one, the skipped ones folded with 采纳,
@@ -203,9 +180,7 @@ export function WorkspacePreview({
   preview,
   conflict,
   rejected,
-  pendingImages,
   isSettled,
-  mediaPreview,
   onRestore,
   ...handlers
 }: DecisionHandlers & {
@@ -217,9 +192,7 @@ export function WorkspacePreview({
   preview: string;
   conflict: boolean;
   rejected: DraftOperation[];
-  pendingImages: PendingImage[];
   isSettled: (callId: string) => boolean;
-  mediaPreview?: ReactNode;
   onRestore?: (callId: string, proposal: EditProposal) => void;
 }) {
   const pending = draft?.operations ?? [];
@@ -235,9 +208,7 @@ export function WorkspacePreview({
     draft,
     preview,
     rejected,
-    pendingImages,
     labels,
-    imageActions: !!handlers.onImageAccept,
   });
   return (
     <div
@@ -301,7 +272,6 @@ export function WorkspacePreview({
           dangerouslySetInnerHTML={marked.inner}
         />
       </div>
-      {mediaPreview}
       {(pending.length > 0 || rejected.length > 0) && (
         <WorkspaceChanges
           labels={labels}

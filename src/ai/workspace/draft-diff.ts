@@ -196,162 +196,6 @@ export function markDraftChanges(
   return { html: out.map((el) => el.outerHTML).join(""), changes };
 }
 
-/** A picture still being made, for the document panel. */
-export interface PendingImage {
-  id: string;
-  /** The passage it follows, as markdown (a heading, a sentence). */
-  anchor: string;
-  prompt: string;
-  /** Painted and waiting to go in (its paragraph is still only in the
-   *  draft): the finished picture, shown instead of the shimmer. */
-  preview?: string;
-  /** Skipped by the user: kept small, with a way to take it after all. */
-  skipped?: boolean;
-  /** Accepted on its own: goes in with its text, so only 跳过 is left. */
-  approved?: boolean;
-}
-
-/** The text an anchor reads as in the rendered document. */
-function anchorText(anchor: string): string {
-  return (anchor.split("\n").find((line) => line.trim()) ?? "")
-    .replace(/^\s*(#{1,6}\s+|>\s*|[-*+]\s+|\d+[.)]\s+)/, "")
-    .replace(/[*_`~]/g, "")
-    .replace(/[\s\u3000]+/g, " ")
-    .trim();
-}
-
-/** Puts a "making this picture" card after the block each pending picture
- *  follows, so the document panel shows a picture coming instead of nothing
- *  until it is inserted. One whose passage isn't in the panel gets no card:
- *  parked at the end it read as a second, stray picture. */
-export function withImagePlaceholders(
-  html: string,
-  pending: PendingImage[],
-  label: string,
-  readyLabel = label,
-  /** The ready picture's own accept / reject buttons, and the line a
-   *  skipped one is folded to. */
-  actions?: {
-    accept: string;
-    reject: string;
-    skipped: string;
-    approved: string;
-  },
-): string {
-  if (!pending.length) return html;
-  const template = document.createElement("template");
-  template.innerHTML = html;
-  const blocks = [...template.content.children];
-  const texts = blocks.map((block) =>
-    (block.textContent ?? "").replace(/[\s\u3000]+/g, " "),
-  );
-  for (const job of pending) {
-    const text = anchorText(job.anchor);
-    const at = text ? texts.findIndex((t) => t.includes(text)) : -1;
-    if (at < 0) continue;
-    if (job.skipped && actions) {
-      // Skipped, not gone ("万一后悔"): one quiet line under its paragraph.
-      const row = document.createElement("div");
-      row.className = "draft-image-skipped";
-      row.dataset.job = job.id;
-      const thumb = document.createElement("span");
-      thumb.className = "draft-image-skipped-thumb";
-      // A background, not an <img>: withImageSrc rewrites every <img>.
-      // Still painting: an empty frame.
-      if (job.preview)
-        thumb.style.backgroundImage = `url("${job.preview.replace(/"/g, "%22")}")`;
-      const note = document.createElement("span");
-      note.textContent = actions.skipped;
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "workspace-button";
-      button.dataset.imageAction = "accept";
-      button.dataset.job = job.id;
-      button.textContent = actions.accept;
-      row.append(thumb, note, button);
-      blocks[at].after(row);
-      continue;
-    }
-    if (job.preview) {
-      // Painted: the picture itself, where and how it will sit in the
-      // document, marked as part of the draft's new content.
-      const figure = document.createElement("figure");
-      figure.className = "draft-image-ready draft-added";
-      figure.dataset.job = job.id;
-      const img = document.createElement("img");
-      img.src = job.preview;
-      img.alt = job.prompt;
-      // Already a displayable URL: withImageSrc must not read it as a
-      // document path.
-      img.dataset.draftPicture = "";
-      const caption = document.createElement("figcaption");
-      const note = document.createElement("span");
-      note.textContent =
-        job.approved && actions ? actions.approved : readyLabel;
-      caption.append(note);
-      if (job.approved) figure.classList.add("is-approved");
-      if (actions)
-        for (const [action, text] of job.approved
-          ? [["reject", actions.reject]]
-          : [
-              ["accept", actions.accept],
-              ["reject", actions.reject],
-            ]) {
-          const button = document.createElement("button");
-          button.type = "button";
-          button.className = `workspace-button${action === "accept" ? "" : " is-quiet"}`;
-          button.dataset.imageAction = action;
-          button.dataset.job = job.id;
-          button.textContent = text;
-          caption.append(button);
-        }
-      figure.append(img, caption);
-      blocks[at].after(figure);
-      continue;
-    }
-    const card = document.createElement("div");
-    card.className = "draft-image-pending";
-    card.dataset.job = job.id;
-    const thumb = document.createElement("span");
-    thumb.className = "draft-image-pending-thumb";
-    const body = document.createElement("span");
-    body.className = "draft-image-pending-text";
-    const title = document.createElement("strong");
-    title.textContent = label;
-    const prompt = document.createElement("span");
-    prompt.textContent = job.prompt;
-    body.append(title, prompt);
-    card.append(thumb, body);
-    // Decided before it is done: taken now (it goes in once painted), or
-    // set aside - no waiting for the picture to say yes or no to it.
-    if (actions) {
-      if (job.approved) {
-        card.classList.add("is-approved");
-        title.textContent = `${label} · ${actions.approved}`;
-      }
-      const decide = document.createElement("span");
-      decide.className = "draft-image-pending-actions";
-      for (const [action, text] of job.approved
-        ? [["reject", actions.reject]]
-        : [
-            ["accept", actions.accept],
-            ["reject", actions.reject],
-          ]) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = `workspace-button${action === "accept" ? "" : " is-quiet"}`;
-        button.dataset.imageAction = action;
-        button.dataset.job = job.id;
-        button.textContent = text;
-        decide.append(button);
-      }
-      card.append(decide);
-    }
-    blocks[at].after(card);
-  }
-  return template.innerHTML;
-}
-
 /** One pending change and its paragraphs, by the text of the blocks it
  *  writes (or, for a deletion, removes) - how its place in the marked
  *  document is found. Each part names what deciding it acts on: a split
@@ -409,7 +253,7 @@ function actionButton(
 
 /** Puts the decisions where the draft is read: on each paragraph of a
  *  change that adds more than one (✓ / ✕ on hover), 采纳 / 不采纳 for the
- *  whole change after its last block (and any picture placed under it) -
+ *  whole change after its last block -
  *  for the last change left, the same as 全部采纳 - and the
  *  paragraphs rejected so far, struck through with 恢复. A change whose
  *  blocks aren't found gets none - the change list still has it. */
@@ -428,19 +272,13 @@ export function withChangeActions(
   const template = document.createElement("template");
   template.innerHTML = html;
   const blocks = [...template.content.children];
-  // The changed blocks with words to match by. Not a picture's frame (it
-  // is marked as new, but has no text of its own), and not a block with no
-  // text: "" is inside every paragraph, and used to take its ✓ / ✕.
-  const marked = blocks.map((block) => {
-    if (
-      !block.matches(".draft-added, .draft-changed, .draft-removed") ||
-      block.matches(
-        ".draft-image-pending, .draft-image-ready, .draft-image-skipped",
-      )
-    )
-      return null;
-    return blockText(block) || null;
-  });
+  // The changed blocks with words to match by. Not a block with no text:
+  // "" is inside every paragraph, and used to take its ✓ / ✕.
+  const marked = blocks.map((block) =>
+    block.matches(".draft-added, .draft-changed, .draft-removed")
+      ? blockText(block) || null
+      : null,
+  );
   const used = new Set<number>();
   const find = (raw: string) => {
     const text = flat(raw);
@@ -451,16 +289,6 @@ export function withChangeActions(
         !used.has(i) &&
         (t === text || t.includes(text) || text.includes(t)),
     );
-  };
-  const pictureAfter = (el: Element) => {
-    let after = el;
-    while (
-      after.nextElementSibling?.matches(
-        ".draft-image-pending, .draft-image-ready, .draft-image-skipped",
-      )
-    )
-      after = after.nextElementSibling;
-    return after;
   };
   for (const target of targets) {
     const found: { at: number; call: string; part: number }[] = [];
@@ -513,11 +341,11 @@ export function withChangeActions(
           "workspace-button draft-part-restore",
         ),
       );
-      if (anchor >= 0) pictureAfter(blocks[anchor]).after(ghost);
+      if (anchor >= 0) blocks[anchor].after(ghost);
       else blocks[found[0].at].before(ghost);
     }
     const last = Math.max(...found.map((f) => f.at));
-    let after = pictureAfter(blocks[last]);
+    let after = blocks[last];
     while (after.nextElementSibling?.matches(".draft-part-rejected"))
       after = after.nextElementSibling;
     const bar = document.createElement("div");

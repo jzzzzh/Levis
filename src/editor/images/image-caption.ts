@@ -4,7 +4,7 @@ import { $prose } from "@milkdown/kit/utils";
 import type { Node as ProseNode } from "@milkdown/kit/prose/model";
 import { readImagePresentation } from "./image-html";
 import { parseEmbed } from "./obsidian-embed";
-import "./image-extras.css";
+import "./image-caption.css";
 
 /**
  * A picture's caption: a short paragraph that is all emphasis, right after

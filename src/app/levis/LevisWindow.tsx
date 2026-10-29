@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { GlobalDictation } from "../../voice/GlobalDictation";
-import { FootprintLayer } from "../../ai/magic-diary/FootprintLayer";
+import { lazyModule } from "../../lazy/lazy-module";
+import { lazyComponent } from "../../lazy/lazy-component";
 import { makeBlankTab, type DocTab } from "../../document/doc-tabs";
 import {
   NEW_DOCUMENT_EVENT,
@@ -16,10 +17,13 @@ import {
 import type { Settings } from "../../prefs/SettingsContext";
 import type { TabState } from "../tabs/useTabState";
 import { useLatest } from "../../utils/hooks/useLatest";
-// The Magic Diary's aged-paper skin for the whole window, applied by
-// html[data-magic-diary]: it covers the chrome as well as the page.
-import "../../theme/magic-diary-page.css";
 import "./levis-window.css";
+
+// The Magic Diary's room loads only when the diary is switched on.
+const DiaryRoom = lazyComponent(
+  lazyModule("levis-diary-room", () => import("./DiaryRoom")),
+  (m) => m.DiaryRoom,
+);
 
 /**
  * Levis' part of one window (App renders it first in the shell): which
@@ -103,8 +107,11 @@ export function LevisWindow({
   return (
     <>
       <GlobalDictation language={settings.language} />
-      {/* Whoever walks around the margins while the Magic Diary is on. */}
-      <FootprintLayer />
+      {settings.enableMagicDiary && (
+        <Suspense fallback={null}>
+          <DiaryRoom />
+        </Suspense>
+      )}
     </>
   );
 }

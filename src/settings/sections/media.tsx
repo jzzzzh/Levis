@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from "react";
 import { useMediaKey } from "./useMediaKey";
 import {
   media,
+  type MediaCapability,
   type MediaProviderConfig,
   type MediaProviders,
 } from "../../platform/ipc-levis";
@@ -9,7 +10,6 @@ import {
   mediaPresets,
   mediaProviderDefaults,
   reusesChatKey,
-  type SpeechCapability,
 } from "../../media/provider-catalog";
 import { errorText } from "../../utils/error-text";
 import { Select } from "../../ui/Select";
@@ -25,7 +25,7 @@ function MediaProviderForm({
   language,
   onSaved,
 }: {
-  capability: SpeechCapability;
+  capability: MediaCapability;
   initial?: MediaProviderConfig;
   language: string;
   onSaved: (config: MediaProviderConfig | undefined) => void;
@@ -347,7 +347,7 @@ function MediaProviderForm({
 export function MediaSettings({ language }: { language: string }) {
   const zh = language.startsWith("zh");
   const [providers, setProviders] = useState<MediaProviders | null>(null);
-  const [active, setActive] = useState<SpeechCapability>("stt");
+  const [active, setActive] = useState<MediaCapability>("stt");
   const [error, setError] = useState("");
   const id = useId();
   useEffect(() => {
@@ -399,7 +399,7 @@ export function MediaSettings({ language }: { language: string }) {
                 onClick={() => setActive(capability)}
                 onKeyDown={(event) => {
                   const tabs = CAPABILITIES;
-                  let next: SpeechCapability;
+                  let next: MediaCapability;
                   if (event.key === "ArrowRight")
                     next = tabs[(tabs.indexOf(capability) + 1) % tabs.length];
                   else if (event.key === "ArrowLeft")

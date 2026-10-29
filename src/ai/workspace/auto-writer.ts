@@ -15,8 +15,6 @@ export interface PlannedSection {
   brief: string;
   /** A target length in characters/words, as the plan suggests. */
   length: number;
-  /** Whether this section should get a generated illustration. */
-  image: boolean;
   /** One of the project's own pictures for it (its path in the folder). */
   picture?: string;
 }
@@ -85,7 +83,6 @@ export function planningPrompt(
   material: string,
   extra: string,
   zh: boolean,
-  images = false,
   /** The project's own pictures the sections may use. */
   pictures: string[] = [],
 ): string {
@@ -106,17 +103,12 @@ export function planningPrompt(
         : `${zh ? "用户的要求" : "The user's requirements"}:\n${extra.trim()}`
       : "",
     zh
-      ? '只输出一个 JSON 对象：{"title":"文档标题","guide":"所有章节都要遵守的写作要求摘要（文风、受众、篇幅、术语、格式等，300 字以内）","sections":[{"title":"章节标题","brief":"本节要写的要点（100 字以内）","length":本节建议字数,"image":是否适合配一张插图}]}。章节顺序即写作顺序，有资料时严格依据资料，不要编造资料中没有的结构；没有明确大纲时按内容合理拆成 3–8 节。不要调用工具，不要输出其他文字。'
-      : 'Output ONLY a JSON object: {"title":"document title","guide":"the requirements every section must follow (tone, audience, length, terminology, format) in under 80 words","sections":[{"title":"section heading","brief":"what this section covers, under 40 words","length":suggested words,"image":whether it suits one illustration}]}. Sections in writing order, following the material when there is some; without an explicit outline, split the content into 3-8 sections. No tools, no other text.',
+      ? '只输出一个 JSON 对象：{"title":"文档标题","guide":"所有章节都要遵守的写作要求摘要（文风、受众、篇幅、术语、格式等，300 字以内）","sections":[{"title":"章节标题","brief":"本节要写的要点（100 字以内）","length":本节建议字数}]}。章节顺序即写作顺序，有资料时严格依据资料，不要编造资料中没有的结构；没有明确大纲时按内容合理拆成 3–8 节。不要调用工具，不要输出其他文字。'
+      : 'Output ONLY a JSON object: {"title":"document title","guide":"the requirements every section must follow (tone, audience, length, terminology, format) in under 80 words","sections":[{"title":"section heading","brief":"what this section covers, under 40 words","length":suggested words}]}. Sections in writing order, following the material when there is some; without an explicit outline, split the content into 3-8 sections. No tools, no other text.',
     pictures.length
       ? zh
         ? `项目里已有这些图片：\n${listed}\n内容合适的章节直接用其中一张：在该节写 "picture":"图片路径"（照抄上面的路径），每张最多用一次。`
         : `The project already has these pictures:\n${listed}\nGive a section one of them when it fits: "picture":"its path" (copied from above), each used at most once.`
-      : "",
-    images
-      ? zh
-        ? '用户开启了配图：没有合适的现成图片、又适合配图的 1–3 节（约每三节一张）标为 "image":true，会为它生成插图。'
-        : 'The user switched illustrations on: mark the 1-3 sections without a fitting existing picture that suit one best (about one in three) with "image":true - one is generated for them.'
       : "",
   ]
     .filter(Boolean)
@@ -153,7 +145,6 @@ export function parsePlan(
             typeof s.length === "number" && s.length > 0
               ? Math.min(Math.round(s.length), 5000)
               : 600,
-          image: !picture && s.image === true,
           ...(picture ? { picture } : {}),
         };
       });
@@ -168,16 +159,6 @@ export function parsePlan(
   }
 }
 
-/** With illustrations on, a plan always has pictures: when the model gave
- *  none, about one section in three gets one generated, from the first. */
-export function ensureIllustrated(plan: WritingPlan): WritingPlan {
-  if (plan.sections.some((s) => s.image || s.picture)) return plan;
-  return {
-    ...plan,
-    sections: plan.sections.map((s, i) => ({ ...s, image: i % 3 === 0 })),
-  };
-}
-
 /** One section's request. Self-contained - the plan's guide and the outline
  *  ride along, the document itself is sent by the agent loop - so a long
  *  run does not depend on an ever-growing conversation. */
@@ -185,7 +166,6 @@ export function sectionPrompt(
   plan: WritingPlan,
   index: number,
   options: {
-    images: boolean;
     first: boolean;
     revision?: string;
     /** The section's own picture, as the document shows it. */
@@ -200,7 +180,6 @@ export function sectionPrompt(
         `${i + 1}. ${s.title}${i === index ? (zh ? "  ← 本节" : "  ← this one") : ""}`,
     )
     .join("\n");
-  const generate = options.images && section.image && !options.pictureSrc;
   const lines = zh
     ? [
         `【自动写作 ${index + 1}/${plan.sections.length}】请写第 ${index + 1} 节「${section.title}」。`,
@@ -213,10 +192,7 @@ export function sectionPrompt(
           : "",
         `用 propose_edit 的 append 把本节追加到文末，以二级标题「${section.title}」开头；不要改动已有内容，不要写其他章节，与前文自然衔接、不重复。`,
         options.pictureSrc
-          ? `本节使用项目里已有的图片：在最适合的那一段之后，单独一行写 ![简短的图片说明](${options.pictureSrc})，路径照抄，不要生成新图。`
-          : "",
-        generate
-          ? "本节写完后，用 generate_image 为本节配一张插图：提示词由你根据本节内容来写，锚点选本节中最适合放图的那一段的原文（图片放在它后面），无需用户确认。"
+          ? `本节使用项目里已有的图片：在最适合的那一段之后，单独一行写 ![简短的图片说明](${options.pictureSrc})，路径照抄。`
           : "",
         options.revision
           ? `用户对上一稿的修改意见：${options.revision}\n请据此重写本节。`
@@ -233,10 +209,7 @@ export function sectionPrompt(
           : "",
         `Append the section to the end with propose_edit (append), starting with the level-two heading "${section.title}"; do not change existing text or write other sections; continue naturally from what precedes it without repeating it.`,
         options.pictureSrc
-          ? `Use the project's own picture for this section: after the paragraph it suits best, on a line of its own, write ![a short caption](${options.pictureSrc}) with the path exactly as given - don't generate one.`
-          : "",
-        generate
-          ? "Then illustrate it with generate_image: write the prompt yourself from the section, and anchor it to the paragraph the picture suits best (it goes right after it) - no approval needed."
+          ? `Use the project's own picture for this section: after the paragraph it suits best, on a line of its own, write ![a short caption](${options.pictureSrc}) with the path exactly as given.`
           : "",
         options.revision
           ? `The user's notes on the previous draft: ${options.revision}\nRewrite the section accordingly.`

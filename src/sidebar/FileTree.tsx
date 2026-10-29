@@ -38,7 +38,6 @@ import {
 } from "./tree-shared";
 import { useRowDrag } from "./useRowDrag";
 import { DirNode } from "./TreeNodes";
-import { TreePictureViewer } from "./tree-pictures";
 import "./FileTree.css";
 import { copyPathItem } from "../clipboard/copy-path";
 export type { TreeSort } from "./tree-shared";
@@ -310,7 +309,6 @@ export function FileTree({
             </div>,
             document.body,
           )}
-        <TreePictureViewer docPath={activePath} />
       </div>
     </TreeContext.Provider>
   );

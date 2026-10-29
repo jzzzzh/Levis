@@ -50,17 +50,6 @@
     transform var(--dur-fast) var(--ease-in),
     visibility 0s linear var(--dur-fast);
 }
-/* The page, back from Agent: it rises into place (the editor's root,
-   for the length of the animation - MilkdownEditor). */
-.surface-arrive {
-  animation: surface-arrive var(--dur-slow) var(--ease-spring) both;
-}
-@keyframes surface-arrive {
-  from {
-    opacity: 0;
-    transform: translateY(calc(var(--motion-distance-md) * 1.5));
-  }
-}
 
 .agent-workspace {
   position: absolute;
@@ -820,171 +809,6 @@
   }
 }
 
-/* ---------- Agent | 写作 (SurfaceSwitch.tsx) ----------
-   One segmented switch at the window bar's start, in both surfaces. The
-   highlight slides to the side that is on with a little give (the bouncy
-   spring), and the icon of the side just turned on gives a small pop. */
-.surface-switch {
-  position: relative;
-  isolation: isolate;
-  display: inline-flex;
-  align-items: center;
-  height: 26px;
-  margin-left: 2px;
-  padding: 2px;
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--editor-text) 6%, transparent);
-  box-shadow: inset 0 0 0 1px
-    color-mix(in srgb, var(--editor-border, #8884) 55%, transparent);
-  animation: motion-fade-in var(--dur-base) var(--ease-out);
-}
-.surface-switch-thumb {
-  position: absolute;
-  top: 2px;
-  bottom: 2px;
-  left: 0;
-  z-index: 0;
-  border-radius: var(--radius-pill);
-  background: var(--editor-bg, var(--bg));
-  box-shadow:
-    var(--shadow-switch-thumb),
-    0 0 0 0.5px color-mix(in srgb, var(--editor-border, #8884) 80%, transparent);
-}
-.surface-switch.is-ready .surface-switch-thumb {
-  transition:
-    transform var(--dur-sheet, 380ms) var(--ease-spring-bouncy),
-    scale var(--dur-fast) var(--ease-out);
-}
-/* Pressed: the highlight gives under the finger before it moves. */
-.surface-switch:has(.surface-switch-option:active) .surface-switch-thumb {
-  scale: 0.96;
-}
-.surface-switch-option {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 22px;
-  padding: 0 11px 0 9px;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: none;
-  color: var(--editor-muted, inherit);
-  font: inherit;
-  font-size: var(--text-sm);
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-standard);
-}
-.surface-switch-option:not([aria-pressed="true"]):hover,
-.surface-switch-option[aria-pressed="true"] {
-  color: var(--editor-text);
-}
-.surface-switch-option:focus-visible {
-  outline: 2px solid var(--editor-accent, var(--chrome-primary));
-  outline-offset: 1px;
-}
-.surface-switch-option svg {
-  flex: none;
-  width: 13px;
-  height: 13px;
-  transition:
-    color var(--dur-fast) var(--ease-standard),
-    transform var(--dur-base) var(--ease-spring);
-}
-.surface-switch-option:not([aria-pressed="true"]):hover svg {
-  transform: scale(1.12);
-}
-.surface-switch-option.is-agent[aria-pressed="true"] svg {
-  color: var(--editor-accent, var(--chrome-primary));
-}
-.surface-switch.is-ready .surface-switch-option[aria-pressed="true"] svg {
-  animation: surface-switch-pop var(--dur-sheet, 380ms)
-    var(--ease-spring-bouncy);
-}
-@keyframes surface-switch-pop {
-  0% {
-    transform: scale(0.6) rotate(-20deg);
-  }
-  60% {
-    transform: scale(1.15) rotate(6deg);
-  }
-  100% {
-    transform: none;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .surface-switch.is-ready .surface-switch-option[aria-pressed="true"] svg {
-    animation: none;
-  }
-  .surface-switch:has(.surface-switch-option:active) .surface-switch-thumb {
-    scale: none;
-  }
-}
-
-/* Write is a quiet page; media actions live in selection menus and Agent. */
-
-/* ---------- Dictation controls ---------- */
-.inline-dictation {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  margin-left: auto;
-}
-.inline-dictation button {
-  display: grid;
-  place-items: center;
-  padding: 6px;
-  border: 0;
-  background: transparent;
-  border-radius: 50%;
-  transition: background-color var(--dur-fast) var(--ease-standard);
-}
-.inline-dictation select {
-  font: inherit;
-  font-size: 10px;
-  max-width: 65px;
-  color: inherit;
-  background: transparent;
-  border: 0;
-  opacity: 0.5;
-}
-.inline-dictation .dictation-listening {
-  position: relative;
-  isolation: isolate;
-  color: var(--success-color);
-  background: color-mix(in srgb, var(--success-color) 14%, transparent);
-}
-/* The listening ring: a disc that grows out from the button and fades. */
-.inline-dictation .dictation-listening::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  background: color-mix(in srgb, var(--success-color) 35%, transparent);
-  pointer-events: none;
-  animation: dictation-ring 1.6s var(--ease-standard) infinite;
-}
-@keyframes dictation-ring {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.6);
-  }
-}
-.inline-dictation [role="alert"] {
-  font-size: var(--text-xs);
-  color: var(--danger, #cf655f);
-  max-width: 240px;
-  animation: motion-fade-in var(--dur-fast) var(--ease-out);
-}
-
 /* ---------- Selection illustration: a floating status chip ---------- */
 .selection-illustration-status {
   position: fixed;
@@ -1056,15 +880,6 @@
   .workspace-status.is-running .workspace-status-dot {
     animation: none;
   }
-  .inline-dictation .dictation-listening::after {
-    display: none;
-  }
-}
-
-/* In Agent the window bar's chat toggle would open a second Agent: hidden
-   while the active document shows the Agent surface. */
-:root[data-levis-agent] .window-bar-toggle {
-  display: none;
 }
 
 /* "New document" in the Agent header: a quiet text button that shows its
@@ -1865,93 +1680,6 @@ button.auto-writer-image:active {
   }
 }
 
-/* A picture on its way, where it will go in the document panel. */
-.workspace-document .draft-image-pending {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin: var(--space-3) 0;
-  padding: var(--space-2);
-  border: 1px dashed
-    color-mix(
-      in srgb,
-      var(--editor-accent, var(--chrome-primary)) 45%,
-      transparent
-    );
-  border-radius: var(--radius-block);
-  font-size: var(--text-xs);
-  animation: motion-fade-in var(--dur-base) var(--ease-out);
-}
-.draft-image-pending-thumb {
-  position: relative;
-  flex: none;
-  width: 64px;
-  aspect-ratio: 4 / 3;
-  overflow: hidden;
-  border-radius: 6px;
-  background: color-mix(
-    in srgb,
-    var(--editor-accent, var(--chrome-primary)) 12%,
-    var(--editor-bg, var(--bg))
-  );
-}
-.draft-image-pending-thumb::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    105deg,
-    transparent 30%,
-    color-mix(in srgb, var(--editor-bg, #fff) 70%, transparent) 50%,
-    transparent 70%
-  );
-  transform: translateX(-100%);
-  animation: placeholder-sheen 1.8s var(--ease-in-out) infinite;
-}
-/* A painted picture waiting for its text: shown as it will sit. */
-.workspace-document .draft-image-ready {
-  margin: var(--space-3) 0;
-  animation: motion-fade-in var(--dur-base) var(--ease-out);
-}
-.workspace-document .draft-image-ready img {
-  display: block;
-  max-width: 100%;
-  height: auto;
-  border-radius: var(--radius-block);
-}
-.workspace-document .draft-image-ready figcaption {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
-  font-size: var(--text-xs);
-  color: var(--editor-muted, inherit);
-}
-.workspace-document .draft-image-ready figcaption > span {
-  margin-inline-end: auto;
-}
-.draft-image-pending-text {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-.draft-image-pending-text strong {
-  color: var(--editor-accent, var(--chrome-primary));
-  font-weight: 600;
-}
-.draft-image-pending-text span {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  opacity: 0.7;
-}
-@media (prefers-reduced-motion: reduce) {
-  .draft-image-pending-thumb::after {
-    animation: none;
-  }
-}
-
 /* The document panel shows a picture's caption (*Caption* right after it)
    the way the editor does: centred under it. */
 .workspace-document .agent-markdown p:has(> img) + p:has(> em:only-child) {
@@ -2162,35 +1890,6 @@ button.auto-writer-image:active {
   color: var(--editor-muted, inherit);
 }
 
-/* A skipped picture, folded to one line under its paragraph: still there
-   to take after all. */
-.workspace-document .draft-image-skipped {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: var(--space-2) 0;
-  padding: 6px var(--space-2);
-  border: 1px dashed
-    color-mix(in srgb, var(--editor-border, #8884) 90%, transparent);
-  border-radius: var(--radius-block);
-  font-size: var(--text-xs);
-  color: var(--editor-muted, inherit);
-  animation: motion-fade-in var(--dur-base) var(--ease-out);
-}
-.draft-image-skipped-thumb {
-  flex: none;
-  width: 36px;
-  height: 27px;
-  border-radius: 4px;
-  background-size: cover;
-  background-position: center;
-  filter: grayscale(1);
-  opacity: 0.6;
-}
-.workspace-document .draft-image-skipped > span:nth-child(2) {
-  flex: 1;
-}
-
 /* Skipped changes stay in the list, folded and quiet, with 采纳. */
 .workspace-changes article.is-skipped {
   opacity: 0.7;
@@ -2207,11 +1906,6 @@ button.auto-writer-image:active {
   margin-right: auto;
   font-size: var(--text-xs);
   color: var(--editor-muted, inherit);
-}
-
-/* Accepted on its own, waiting for its text: the note says so in accent. */
-.workspace-document .draft-image-ready.is-approved figcaption > span {
-  color: var(--editor-accent, var(--chrome-primary));
 }
 
 /* Each change's own decision, right under its last block (draft-diff.ts's
@@ -2457,21 +2151,4 @@ button.auto-writer-image:active {
     var(--editor-accent, var(--chrome-primary)) 10%,
     transparent
   );
-}
-
-/* A picture still painting can be decided already: 采纳 / 跳过 at the
-   card's end. Taken, the card says so in the accent. */
-.workspace-document .draft-image-pending-actions {
-  display: inline-flex;
-  flex: none;
-  gap: 4px;
-  margin-left: auto;
-}
-.workspace-document .draft-image-pending-actions .workspace-button {
-  height: 24px;
-  padding: 0 10px;
-  font-size: var(--text-xs);
-}
-.workspace-document .draft-image-pending.is-approved {
-  border-style: solid;
 }

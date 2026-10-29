@@ -11,6 +11,3 @@
 # their target/ and Cargo.lock are redundant with the ones above.
 crates/*/target/
 crates/*/Cargo.lock
-
-# Levis: the agent harness staged by scripts/prepare-harness.mjs.
-/resources/harness/

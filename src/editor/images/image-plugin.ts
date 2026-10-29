@@ -32,6 +32,7 @@ import {
   readImagePresentation,
   withImageWidth,
 } from "./image-html";
+import { imageRotationView } from "./image-rotation";
 import { DROP_IMAGE_FILES_EVENT } from "../../utils/events";
 import { decorateAll, redecorateChanged } from "../changed-ranges";
 import { isLargeDoc } from "../large-doc";
@@ -48,7 +49,6 @@ import {
   swapStoredBlobs,
 } from "./image-store";
 import { openDiagramViewer, zoomButton } from "../diagram-zoom";
-import { imageExtras } from "./image-toolbar";
 export {
   safeImageStem,
   imageStemForMode,
@@ -159,7 +159,7 @@ function createImageView(
     if (loaded()) openDiagramViewer(img, dom);
   });
   dom.append(zoom);
-  const extras = imageExtras(dom, img);
+  const showRotation = imageRotationView(dom, img);
 
   let current = node;
   // Which picture is on show: its src, in this document.
@@ -219,7 +219,7 @@ function createImageView(
     else img.removeAttribute("title");
     dom.style.width = width ? cssWidth(width) : "";
     dom.classList.toggle("image-view-sized", width !== null);
-    extras.apply(n);
+    showRotation(n.attrs.title as string);
   };
   apply(node);
 
@@ -240,9 +240,7 @@ function createImageView(
     handle.setPointerCapture(event.pointerId);
     dom.classList.add("image-view-resizing");
 
-    let moved = false;
     const move = (e: PointerEvent) => {
-      moved ||= Math.abs(e.clientX - startX) > 2;
       const width = startWidth + (e.clientX - startX) * factor;
       percent = Math.min(100, Math.max(5, (width / scale / available) * 100));
       dom.style.width = `${percent}%`;
@@ -252,8 +250,6 @@ function createImageView(
       handle.removeEventListener("pointerup", finish);
       handle.removeEventListener("pointercancel", finish);
       dom.classList.remove("image-view-resizing");
-      // A click on the handle without a drag changes nothing.
-      if (!moved) return;
       const pos = getPos();
       if (pos === undefined) return;
       view.dispatch(

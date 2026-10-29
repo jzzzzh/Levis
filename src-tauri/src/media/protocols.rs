@@ -18,7 +18,6 @@ pub fn known_provider(p: &str) -> bool {
             | "siliconflow"
             | "groq"
             | "together"
-            | "volcengine"
     )
 }
 /// Whether a media provider can use the chat provider's key ("minimax-chat").
@@ -54,17 +53,6 @@ pub fn supports(p: &str, c: &str) -> bool {
                 | "groq"
                 | "together"
         ),
-        "image" => matches!(
-            p,
-            "openai"
-                | "openai-compatible"
-                | "minimax"
-                | "gemini"
-                | "dashscope"
-                | "siliconflow"
-                | "together"
-                | "volcengine"
-        ),
         _ => false,
     }
 }
@@ -82,7 +70,6 @@ pub fn route(
     Ok(match (c.provider.as_str(), capability) {
         ("minimax", "stt") => "speech_to_text".into(),
         ("minimax", "tts") => "t2a_v2".into(),
-        ("minimax", "image") => "image_generation".into(),
         ("elevenlabs", "stt") => "speech-to-text".into(),
         ("elevenlabs", "tts") => {
             let voice = c.voice.as_deref().unwrap_or("");
@@ -353,6 +340,74 @@ fn secure_result_url(url: &str) -> Result<String, MediaError> {
     }
     Ok(parsed.to_string())
 }
+fn public_ip(ip: std::net::IpAddr) -> bool {
+    use std::net::IpAddr;
+    match ip {
+        IpAddr::V4(ip) => {
+            let [a, b, c, _] = ip.octets();
+            !(a == 0
+                || a == 10
+                || a == 127
+                || a >= 224
+                || (a == 100 && (64..=127).contains(&b))
+                || (a == 169 && b == 254)
+                || (a == 172 && (16..=31).contains(&b))
+                || (a == 192 && (b == 168 || b == 0 || (b == 88 && c == 99)))
+                || (a == 198 && (b == 18 || b == 19 || (b == 51 && c == 100)))
+                || (a == 203 && b == 0 && c == 113))
+        }
+        IpAddr::V6(ip) => {
+            let s = ip.segments();
+            // Global unicast only; exclude transition/translation, benchmark,
+            // documentation and special-purpose prefixes conservatively.
+            (s[0] & 0xe000) == 0x2000
+                && s[0] != 0x2002
+                && !(s[0] == 0x2001 && (s[1] < 0x0200 || s[1] == 0x0db8))
+                && !(s[0] == 0x3fff && s[1] < 0x1000)
+        }
+    }
+}
+/// The configured API endpoint is user-chosen. A returned download URL is
+/// untrusted: pin the verified public DNS result and bypass system proxies.
+async fn download_media(url: &str, limit: usize) -> Result<Vec<u8>, MediaError> {
+    let url = reqwest::Url::parse(url).map_err(|_| invalid("Invalid media result URL"))?;
+    if url.scheme() != "https" || !url.username().is_empty() || url.password().is_some() {
+        return Err(MediaError::new(
+            "invalid_url",
+            "Media downloads require a public HTTPS URL without credentials",
+        ));
+    }
+    let host = url
+        .host_str()
+        .ok_or_else(|| MediaError::new("invalid_url", "Media URL has no host"))?;
+    let addresses: Vec<_> = tokio::net::lookup_host((
+        host.trim_matches(['[', ']']),
+        url.port_or_known_default().unwrap_or(443),
+    ))
+    .await
+    .map_err(|_| MediaError::new("network", "Cannot resolve media result host"))?
+    .collect();
+    if addresses.is_empty() || addresses.iter().any(|a| !public_ip(a.ip())) {
+        return Err(MediaError::new(
+            "invalid_url",
+            "Media URL resolved to a non-public address",
+        ));
+    }
+    let client = reqwest::Client::builder()
+        .no_proxy()
+        .redirect(reqwest::redirect::Policy::none())
+        .resolve_to_addrs(host, &addresses)
+        .connect_timeout(std::time::Duration::from_secs(10))
+        .timeout(std::time::Duration::from_secs(60))
+        .build()
+        .map_err(|_| MediaError::new("network", "Cannot create media download client"))?;
+    let response = client
+        .get(url)
+        .send()
+        .await
+        .map_err(provider::network_error)?;
+    provider::read_response(response, limit).await
+}
 fn inline_data(value: &Value, kind: &str) -> Result<(Vec<u8>, String), MediaError> {
     let parts = value
         .pointer("/candidates/0/content/parts")
@@ -446,7 +501,7 @@ pub async fn speech_audio(
                     .pointer("/output/audio/url")
                     .and_then(Value::as_str)
                     .ok_or_else(|| invalid("Qwen returned no audio URL"))?;
-                super::image::download_media(&secure_result_url(url)?, 15 * 1024 * 1024).await?
+                download_media(&secure_result_url(url)?, 15 * 1024 * 1024).await?
             }
             _ => unreachable!(),
         }
@@ -472,108 +527,6 @@ pub async fn speech_audio(
         return Err(invalid("Speech provider returned invalid WAV or MP3 audio"));
     };
     Ok((bytes, mime))
-}
-
-pub fn image_payload(
-    c: &MediaProviderConfig,
-    prompt: &str,
-    size: &str,
-    quality: Option<&str>,
-) -> Result<Value, MediaError> {
-    let (width, height) = size
-        .split_once('x')
-        .and_then(|(w, h)| Some((w.parse::<u32>().ok()?, h.parse::<u32>().ok()?)))
-        .ok_or_else(|| MediaError::new("invalid_request", "Invalid image size"))?;
-    let ratio = match size {
-        "1536x1024" => "3:2",
-        "1024x1536" => "2:3",
-        "1792x1024" => "16:9",
-        "1024x1792" => "9:16",
-        _ => "1:1",
-    };
-    let mut body = match c.provider.as_str() {
-        "minimax" => return super::minimax::image_payload(&c.model, prompt, size),
-        "gemini" => {
-            json!({"contents":[{"role":"user","parts":[{"text":prompt}]}],"generationConfig":{"responseModalities":["TEXT","IMAGE"],"imageConfig":{"aspectRatio":ratio}}})
-        }
-        "dashscope" => {
-            json!({"model":c.model,"input":{"messages":[{"role":"user","content":[{"text":prompt}]}]},"parameters":{"size":size.replace('x',"*"),"n":1,"prompt_extend":false,"watermark":true}})
-        }
-        "siliconflow" => json!({"model":c.model,"prompt":prompt,"image_size":size}),
-        "together" => {
-            if c.model.contains("schnell") || c.model.contains("kontext") {
-                json!({"model":c.model,"prompt":prompt,"aspect_ratio":ratio,"n":1,"response_format":"b64_json"})
-            } else {
-                json!({"model":c.model,"prompt":prompt,"width":width,"height":height,"n":1,"response_format":"b64_json"})
-            }
-        }
-        "volcengine" => {
-            if width != height {
-                return Err(MediaError::new("invalid_request", "Seedream requires a square 2048×2048 image within Textus's image safety limits"));
-            }
-            json!({"model":c.model,"prompt":prompt,"size":"2048x2048","response_format":"b64_json","sequential_image_generation":"disabled","watermark":true})
-        }
-        _ => {
-            let mut body = json!({"model":c.model,"prompt":prompt,"size":size,"n":1});
-            if c.provider == "openai-compatible" || !c.model.starts_with("gpt-image") {
-                body["response_format"] = json!("b64_json");
-            }
-            body
-        }
-    };
-    if let Some(q) =
-        quality.filter(|_| matches!(c.provider.as_str(), "openai" | "openai-compatible"))
-    {
-        if !matches!(q, "auto" | "low" | "medium" | "high" | "standard" | "hd") {
-            return Err(MediaError::new(
-                "invalid_request",
-                "Unsupported image quality",
-            ));
-        }
-        body["quality"] = json!(q);
-    }
-    Ok(body)
-}
-pub async fn image_bytes(response: &Value, c: &MediaProviderConfig) -> Result<Vec<u8>, MediaError> {
-    let url = match c.provider.as_str() {
-        "minimax" => Some(super::minimax::image_url(response)?),
-        "gemini" => return inline_data(response, "image/").map(|(bytes, _)| bytes),
-        "dashscope" => Some(
-            response
-                .pointer("/output/choices/0/message/content/0/image")
-                .and_then(Value::as_str)
-                .ok_or_else(|| invalid("Qwen returned no generated image"))?,
-        ),
-        "siliconflow" => Some(
-            response
-                .get("images")
-                .and_then(Value::as_array)
-                .filter(|a| a.len() == 1)
-                .and_then(|a| a[0].get("url"))
-                .and_then(Value::as_str)
-                .ok_or_else(|| invalid("Expected exactly one SiliconFlow image"))?,
-        ),
-        _ => {
-            let first = response
-                .get("data")
-                .and_then(Value::as_array)
-                .filter(|a| a.len() == 1)
-                .and_then(|a| a.first())
-                .ok_or_else(|| invalid("Expected exactly one generated image"))?;
-            if let Some(encoded) = first.get("b64_json").and_then(Value::as_str) {
-                return STANDARD
-                    .decode(encoded)
-                    .map_err(|_| invalid("Provider returned invalid image base64"));
-            }
-            Some(
-                first
-                    .get("url")
-                    .and_then(Value::as_str)
-                    .ok_or_else(|| invalid("Provider returned neither image data nor a URL"))?,
-            )
-        }
-    };
-    super::image::download_media(url.unwrap(), super::image::MAX_IMAGE_BYTES).await
 }
 
 #[cfg(test)]

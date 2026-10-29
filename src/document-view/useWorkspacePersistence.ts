@@ -25,8 +25,6 @@ export function useWorkspacePersistence({
   path,
   enabled,
   language,
-  imagePending,
-  stopImages,
 }: {
   workspace: ReturnType<typeof useDocumentWorkspace>;
   conversation: AgentConversation;
@@ -36,20 +34,12 @@ export function useWorkspacePersistence({
   path: string | null;
   enabled: boolean;
   language: string;
-  imagePending: boolean;
-  stopImages: () => Promise<void>;
 }) {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [interrupted, setInterrupted] = useState(false);
   const history = useLatest(useChatHistory());
-  const latest = useLatest({
-    workspace,
-    conversation,
-    path,
-    imagePending,
-    stopImages,
-  });
+  const latest = useLatest({ workspace, conversation, path });
   const loadStarted = useRef(false);
   useEffect(() => {
     if (!enabled) {
@@ -122,8 +112,7 @@ export function useWorkspacePersistence({
       } = latest.current;
       const draft = w.draft;
       const snapshot =
-        draft &&
-        (draft.operations.length || c.busy || latest.current.imagePending)
+        draft && (draft.operations.length || c.busy)
           ? {
               schemaVersion: 1 as const,
               documentId,
@@ -148,7 +137,6 @@ export function useWorkspacePersistence({
   }, [
     workspace.draft,
     conversation.busy,
-    imagePending,
     path,
     enabled,
     loaded,
@@ -164,12 +152,7 @@ export function useWorkspacePersistence({
           conversation: c,
           path: currentPath,
         } = latest.current;
-        if (
-          !w.draft?.operations.length &&
-          !c.busy &&
-          !latest.current.imagePending
-        )
-          return true;
+        if (!w.draft?.operations.length && !c.busy) return true;
         const zh = language.startsWith("zh");
         if (reason === "handoff" && !enabled) {
           setError(
@@ -203,12 +186,6 @@ export function useWorkspacePersistence({
           ));
         if (!keep) return false;
         if (c.busy) c.stop();
-        try {
-          await latest.current.stopImages();
-        } catch (error) {
-          setError(String(error));
-          return false;
-        }
         w.finish();
         const frozen = w.currentDraft();
         if (enabled && frozen) {

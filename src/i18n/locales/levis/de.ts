@@ -15,15 +15,4 @@ export const levisDe = {
   defaultHomeLabel: "Startseite",
   defaultHomeAgent: "Agent",
   defaultHomeWrite: "Schreiben",
-  imageRotateLeft: "Nach links drehen",
-  imageRotateRight: "Nach rechts drehen",
-  imageViewLarge: "Bild ansehen",
-  imageShowPrompt: "Generierungs-Prompt anzeigen",
-  imagePromptTitle: "Generierungs-Prompt",
-  imagePromptMissing:
-    "Dieses Bild wurde nicht von Textus erzeugt, oder sein Verlauf ist nicht mehr vorhanden.",
-  imageCopyPrompt: "Prompt kopieren",
-  imageZoomOut: "Verkleinern",
-  imageZoomIn: "Vergrößern",
-  imageViewerClose: "Schließen",
 } satisfies Translation;

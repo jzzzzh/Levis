@@ -31,8 +31,6 @@ const LABELS: Record<string, [string, string]> = {
   close: ["关闭", "Close"],
   picture: ["本节配图", "Picture for this section"],
   noPicture: ["不配图", "No picture"],
-  generate: ["AI 生成", "Generate"],
-  aiPicture: ["AI 配图", "AI picture"],
 };
 
 /** Auto-writing, started from the Agent's composer: a send in Create mode
@@ -72,7 +70,7 @@ export function AutoWriter({
     stopAll,
     requestPause,
   } = useAutoWriter(host, request);
-  const { pictures, extra, images } = request;
+  const { pictures, extra } = request;
   const working = phase === "planning" || phase === "writing";
   const done = states.filter((s) => s === "done").length;
   const label = (key: string) => LABELS[key][zh ? 0 : 1];
@@ -140,37 +138,23 @@ export function AutoWriter({
                   )}
                   {section.brief && <small>{section.brief}</small>}
                 </span>
-                {phase === "outline" && (pictures.length > 0 || images) ? (
+                {phase === "outline" && pictures.length > 0 ? (
                   <select
                     className="auto-writer-picture"
                     aria-label={label("picture")}
                     title={label("picture")}
-                    value={
-                      section.picture ?? (section.image ? "@generate" : "")
-                    }
+                    value={section.picture ?? ""}
                     onChange={(e) => {
                       const value = e.target.value;
                       setPlan({
                         ...plan,
                         sections: plan.sections.map((s, j) =>
-                          j === i
-                            ? {
-                                ...s,
-                                image: value === "@generate",
-                                picture:
-                                  value && value !== "@generate"
-                                    ? value
-                                    : undefined,
-                              }
-                            : s,
+                          j === i ? { ...s, picture: value || undefined } : s,
                         ),
                       });
                     }}
                   >
                     <option value="">{label("noPicture")}</option>
-                    {images && (
-                      <option value="@generate">{label("generate")}</option>
-                    )}
                     {pictures.map((path) => (
                       <option key={path} value={path}>
                         {path.split("/").pop()}
@@ -178,14 +162,10 @@ export function AutoWriter({
                     ))}
                   </select>
                 ) : (
-                  (section.picture || (images && section.image)) && (
+                  section.picture && (
                     <span className="auto-writer-picture-tag">
                       <ImageFileIcon />
-                      <span>
-                        {section.picture
-                          ? section.picture.split("/").pop()
-                          : label("aiPicture")}
-                      </span>
+                      <span>{section.picture.split("/").pop()}</span>
                     </span>
                   )
                 )}

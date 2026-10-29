@@ -19,9 +19,8 @@ pub(crate) mod ui_language;
 pub mod web;
 pub mod workspace;
 
-// Levis: the Magic Diary and the external agent engines (crate::levis).
+// Levis: the Magic Diary (crate::levis).
 pub mod diary;
-pub mod runtime;
 
 /// The settings.json field of the Enable Textus AI master switch. Missing
 /// means on.

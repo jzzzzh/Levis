@@ -1,10 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import {
-  markDraftChanges,
-  withChangeActions,
-  withImagePlaceholders,
-} from "./draft-diff";
+import { markDraftChanges, withChangeActions } from "./draft-diff";
 
 describe("markDraftChanges", () => {
   it("marks a paragraph the draft adds", () => {
@@ -53,115 +49,6 @@ describe("markDraftChanges", () => {
   it("leaves an unchanged document alone", () => {
     const same = "<p>Nothing new.</p>";
     expect(markDraftChanges(same, same)).toEqual({ html: same, changes: 0 });
-  });
-});
-
-describe("withImagePlaceholders", () => {
-  it("puts a card after the block a pending picture follows", () => {
-    const html = withImagePlaceholders(
-      "<h1>玉米·黄金·美洲豹</h1><p>前言。</p><h4>单元三　美洲豹：站在人和神之间</h4><p>正文。</p>",
-      [
-        { id: "a", anchor: "# 玉米·黄金·美洲豹", prompt: "主视觉" },
-        {
-          id: "b",
-          anchor: "#### 单元三　美洲豹：站在人和神之间",
-          prompt: "石雕 <氛围>",
-        },
-        { id: "c", anchor: "不在文中", prompt: "其他" },
-      ],
-      "正在生成配图",
-    );
-    const template = document.createElement("template");
-    template.innerHTML = html;
-    expect(
-      [...template.content.children].map(
-        (el) => (el as HTMLElement).dataset.job ?? el.tagName,
-      ),
-    ).toEqual(["H1", "a", "P", "H4", "b", "P"]);
-    // The prompt is text, never markup.
-    expect(html).toContain("石雕 &lt;氛围&gt;");
-  });
-
-  it("shows a finished picture waiting for its text in place of the card", () => {
-    const html = withImagePlaceholders(
-      "<p>正文。</p>",
-      [{ id: "a", anchor: "正文。", prompt: "p", preview: "asset://x.png" }],
-      "正在生成配图",
-      "配图已生成",
-    );
-    expect(html).toContain('<img src="asset://x.png"');
-    expect(html).toContain("data-draft-picture");
-    expect(html).toContain("配图已生成");
-    expect(html).not.toContain("正在生成配图");
-    // Its own accept / reject only when asked for.
-    expect(html).not.toContain("data-image-action");
-    const withActions = withImagePlaceholders(
-      "<p>正文。</p>",
-      [{ id: "a", anchor: "正文。", prompt: "p", preview: "asset://x.png" }],
-      "正在生成配图",
-      "配图已生成",
-      {
-        accept: "采纳",
-        reject: "跳过",
-        skipped: "已跳过这张配图",
-        approved: "已采纳",
-      },
-    );
-    expect(withActions).toContain('data-image-action="accept"');
-    expect(withActions).toContain('data-image-action="reject"');
-    // Skipped, it folds to one line that can still take it.
-    const folded = withImagePlaceholders(
-      "<p>正文。</p>",
-      [
-        {
-          id: "a",
-          anchor: "正文。",
-          prompt: "p",
-          preview: "asset://x.png",
-          skipped: true,
-        },
-      ],
-      "正在生成配图",
-      "配图已生成",
-      {
-        accept: "采纳",
-        reject: "跳过",
-        skipped: "已跳过这张配图",
-        approved: "已采纳",
-      },
-    );
-    expect(folded).toContain("draft-image-skipped");
-    expect(folded).toContain("已跳过这张配图");
-    expect(folded).toContain('data-image-action="accept"');
-    expect(folded).not.toContain("<img");
-    // Accepted on its own: marked, and only 跳过 is left to change it.
-    const approved = withImagePlaceholders(
-      "<p>正文。</p>",
-      [
-        {
-          id: "a",
-          anchor: "正文。",
-          prompt: "p",
-          preview: "asset://x.png",
-          approved: true,
-        },
-      ],
-      "正在生成配图",
-      "配图已生成",
-      {
-        accept: "采纳",
-        reject: "跳过",
-        skipped: "已跳过这张配图",
-        approved: "已采纳",
-      },
-    );
-    expect(approved).toContain("已采纳");
-    expect(approved).not.toContain('data-image-action="accept"');
-    expect(approved).toContain('data-image-action="reject"');
-  });
-
-  it("leaves the document alone with nothing pending", () => {
-    expect(withImagePlaceholders("<p>x</p>", [], "…")).toBe("<p>x</p>");
   });
 });
 
@@ -216,19 +103,13 @@ describe("withChangeActions", () => {
     ]);
   });
 
-  it("puts a paragraph's ✓ / ✕ on it, not on a picture or an empty block", () => {
+  it("puts a paragraph's ✓ / ✕ on it, not on an empty block", () => {
     const { html } = markDraftChanges(
       "",
       '<p>First.</p><p><img src="a.png"></p><p>Second.</p>',
     );
-    const template = document.createElement("template");
-    template.innerHTML = html;
-    // A picture's frame sits under the first paragraph, marked as new.
-    const figure = document.createElement("figure");
-    figure.className = "draft-image-ready draft-added";
-    template.content.firstElementChild!.after(figure);
     const out = withChangeActions(
-      template.innerHTML,
+      html,
       [
         {
           callId: "a",
@@ -247,7 +128,6 @@ describe("withChangeActions", () => {
       ...back.content.querySelectorAll(".draft-part-actions"),
     ].map((bar) => bar.parentElement!.textContent?.replace(/[✓✕]/g, ""));
     expect(withActions).toEqual(["First.", "Second."]);
-    expect(back.content.querySelector("figure .draft-part-actions")).toBeNull();
   });
 
   it("decides a rewrite whole: no paragraph-by-paragraph buttons", () => {

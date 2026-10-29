@@ -21,7 +21,6 @@ import { isDocumentName } from "./file-search";
 import { localeOf } from "../i18n/langs";
 import { compareEntries, nameCollator } from "../utils/name-order";
 import { useTree } from "./tree-shared";
-import { isTreePicture, showTreePicture, TreeFileIcon } from "./tree-pictures";
 
 interface DirNodeProps {
   path: string;
@@ -146,11 +145,7 @@ export function DirNode({
                 entry={entry}
                 depth={depth + 1}
                 active={entry.path === activePath}
-                onSelect={
-                  isTreePicture(entry)
-                    ? (path) => showTreePicture(sorted, path)
-                    : onFileSelect
-                }
+                onSelect={onFileSelect}
               />
             ),
           )}
@@ -203,7 +198,7 @@ function FileNode({
         }
         {...(isIOSApp ? press.handlers : {})}
       >
-        <TreeFileIcon entry={entry} Icon={Icon} />
+        <Icon className="tree-icon" />
         <span className="tree-label">{entry.name}</span>
       </div>
       <Presence show={!!press.at} exitMs={250}>

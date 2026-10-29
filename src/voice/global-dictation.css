@@ -56,3 +56,77 @@
 .global-dictation.is-docked [role="alert"] {
   bottom: 48px;
 }
+
+/* The dictation button and its listening ring. */
+/* Write is a quiet page; media actions live in selection menus and Agent. */
+
+/* ---------- Dictation controls ---------- */
+.inline-dictation {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.inline-dictation button {
+  display: grid;
+  place-items: center;
+  padding: 6px;
+  border: 0;
+  background: transparent;
+  border-radius: 50%;
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+
+.inline-dictation select {
+  font: inherit;
+  font-size: 10px;
+  max-width: 65px;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  opacity: 0.5;
+}
+
+.inline-dictation .dictation-listening {
+  position: relative;
+  isolation: isolate;
+  color: var(--success-color);
+  background: color-mix(in srgb, var(--success-color) 14%, transparent);
+}
+
+/* The listening ring: a disc that grows out from the button and fades. */
+.inline-dictation .dictation-listening::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--success-color) 35%, transparent);
+  pointer-events: none;
+  animation: dictation-ring 1.6s var(--ease-standard) infinite;
+}
+
+.inline-dictation [role="alert"] {
+  font-size: var(--text-xs);
+  color: var(--danger, #cf655f);
+  max-width: 240px;
+  animation: motion-fade-in var(--dur-fast) var(--ease-out);
+}
+
+@keyframes dictation-ring {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inline-dictation .dictation-listening::after {
+    display: none;
+  }
+}

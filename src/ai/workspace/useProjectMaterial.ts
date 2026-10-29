@@ -13,7 +13,6 @@ export interface AutoWriteRequest {
   pictures: string[];
   /** The user's message: topic, readers, length, tone. */
   extra: string;
-  images: boolean;
 }
 
 /** What auto-writing can work from: the project folder (the chosen one,

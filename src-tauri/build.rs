@@ -25,12 +25,8 @@ fn main() {
         .expect("tauri-build");
 }
 
-/// Levis: the macOS dictation bridge (src/media/dictation.m), and the
-/// harness resource folder the platform configs bundle - staged by
-/// scripts/prepare-harness.mjs, made empty here when it hasn't run (cargo
-/// test, CI), so tauri-build finds it; ai::runtime then says it's missing.
+/// Levis: the macOS dictation bridge (src/media/dictation.m).
 fn levis_build() {
-    let _ = std::fs::create_dir_all("resources/harness");
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("macos") {
         return;
     }

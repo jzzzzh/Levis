@@ -15,15 +15,4 @@ export const levisRu = {
   defaultHomeLabel: "Начальный экран",
   defaultHomeAgent: "Agent",
   defaultHomeWrite: "Письмо",
-  imageRotateLeft: "Повернуть влево",
-  imageRotateRight: "Повернуть вправо",
-  imageViewLarge: "Открыть изображение",
-  imageShowPrompt: "Показать промпт генерации",
-  imagePromptTitle: "Промпт генерации",
-  imagePromptMissing:
-    "Это изображение создано не Textus, или запись о нём больше не существует.",
-  imageCopyPrompt: "Скопировать промпт",
-  imageZoomOut: "Уменьшить",
-  imageZoomIn: "Увеличить",
-  imageViewerClose: "Закрыть",
 } satisfies Translation;

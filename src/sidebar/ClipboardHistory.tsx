@@ -1,60 +1,70 @@
-import { useEffect, useState } from "react";
 import { useSettings } from "../prefs/SettingsContext";
-import { ClipboardTabIcon } from "../ui/icons";
+import { CopyIcon } from "../ui/icons";
 import {
   useClipboardHistory,
   clearClipboardHistory,
+  recordClipboardEntry,
 } from "../clipboard/history";
-import { relativeTime } from "./clipboard-preview";
-import { ClipboardCard } from "./ClipboardCard";
+import { INSERT_CLIPBOARD_TEXT_EVENT } from "../utils/events";
+import { Tooltip } from "../ui/Tooltip";
+
+const PREVIEW_MAX_CHARS = 120;
+
+function preview(text: string): string {
+  const flat = text.replace(/\s+/g, " ").trim();
+  return flat.length > PREVIEW_MAX_CHARS
+    ? `${flat.slice(0, PREVIEW_MAX_CHARS)}…`
+    : flat;
+}
 
 /**
- * Sidebar panel over the clipboard history: one card per entry, newest
- * first, with when it was copied (ClipboardCard). A click inserts an entry
- * at the cursor; copy puts it back on the system clipboard, × forgets it.
+ * Sidebar panel over the clipboard history: a click inserts an entry at the
+ * cursor, the copy button puts it back on the system clipboard.
  */
 export function ClipboardHistory() {
-  const { t, settings } = useSettings();
+  const { t } = useSettings();
   const entries = useClipboardHistory();
-  // Re-read "x minutes ago" now and then while the panel is open.
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 30_000);
-    return () => clearInterval(timer);
-  }, []);
 
   if (entries.length === 0) {
-    return (
-      <div className="clipboard-empty clipboard-cards-empty">
-        <ClipboardTabIcon />
-        <p>{t.clipboardEmpty}</p>
-      </div>
-    );
+    return <div className="clipboard-empty">{t.clipboardEmpty}</div>;
   }
 
   return (
-    <div className="clipboard-history clipboard-cards">
+    <div className="clipboard-history">
       <div className="clipboard-toolbar">
-        <span className="clipboard-title">{t.clipboardTab}</span>
-        <span className="clipboard-count">{entries.length}</span>
         <button className="clipboard-clear" onClick={clearClipboardHistory}>
           {t.clipboardClear}
         </button>
       </div>
-      <div className="clipboard-list">
-        {entries.map((entry) => (
-          <ClipboardCard
-            key={entry.text}
-            entry={entry}
-            when={relativeTime(entry.at, now, settings.language)}
-            labels={{
-              insert: t.clipboardInsertHint,
-              copy: t.clipboardCopy,
-              remove: t.docDelete,
-            }}
-          />
-        ))}
-      </div>
+      {entries.map((entry) => (
+        <div
+          key={entry.at}
+          className="clipboard-entry"
+          title={t.clipboardInsertHint}
+          onClick={() =>
+            window.dispatchEvent(
+              new CustomEvent(INSERT_CLIPBOARD_TEXT_EVENT, {
+                detail: entry.text,
+              }),
+            )
+          }
+        >
+          <span className="clipboard-entry-text">{preview(entry.text)}</span>
+          <Tooltip text={t.clipboardCopy}>
+            <button
+              className="clipboard-entry-copy"
+              aria-label={t.clipboardCopy}
+              onClick={(e) => {
+                e.stopPropagation();
+                void navigator.clipboard.writeText(entry.text);
+                recordClipboardEntry(entry.text);
+              }}
+            >
+              <CopyIcon />
+            </button>
+          </Tooltip>
+        </div>
+      ))}
     </div>
   );
 }

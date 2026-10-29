@@ -64,8 +64,6 @@ export default tseslint.config(
     ignores: [
       "dist/**",
       "dist-playground/**",
-      "harness/node_modules/**",
-      "src-tauri/resources/**",
       "node_modules/**",
       "src-tauri/target/**",
       // The official plugins checked out for the plugin flows.
@@ -189,7 +187,6 @@ export default tseslint.config(
       "vite.playground.config.ts",
       "eslint.config.js",
       "scripts/**/*.mjs",
-      "harness/**/*.mjs",
     ],
     languageOptions: {
       globals: globals.node,

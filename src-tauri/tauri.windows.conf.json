@@ -48,9 +48,6 @@
         ],
         "compression": "lzma"
       }
-    },
-    "resources": {
-      "resources/harness/": "harness/"
     }
   }
 }

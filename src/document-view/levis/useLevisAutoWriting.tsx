@@ -38,7 +38,6 @@ export function useLevisAutoWriting({
   sendContext,
   showProposals,
   stopTask,
-  voiceLanguage,
 }: {
   filePath: string | null;
   settings: Settings;
@@ -56,7 +55,6 @@ export function useLevisAutoWriting({
     proposals: { callId: string; proposal: EditProposal }[],
   ) => void;
   stopTask: () => void;
-  voiceLanguage: string;
 }) {
   const { workspace } = surface;
   const zh = settings.language.startsWith("zh");
@@ -167,7 +165,6 @@ export function useLevisAutoWriting({
         material: picked ? project.material : [],
         pictures: picked ? project.pictures : [],
         extra: message,
-        images: false,
       });
       setSectioned(false);
       return "taken";
@@ -182,27 +179,23 @@ export function useLevisAutoWriting({
 
   const chatHooks: LevisChatHooks = {
     prepareSend,
-    composer: {
-      active: workspace.open && isActive,
-      voiceLanguage,
-      toolbar: (
-        <>
-          <AgentTools items={menu} zh={zh} />
-          {folderAdded && (
-            <ProjectChip
-              project={project}
-              zh={zh}
-              disabled={conversation.busy || !!autoRequest}
-              onChangeFolder={() => pickFolder()}
-              onRemove={() => {
-                project.clear();
-                setFolderAdded(false);
-              }}
-            />
-          )}
-        </>
-      ),
-    },
+    toolbar: (
+      <>
+        <AgentTools items={menu} zh={zh} />
+        {folderAdded && (
+          <ProjectChip
+            project={project}
+            zh={zh}
+            disabled={conversation.busy || !!autoRequest}
+            onChangeFolder={() => pickFolder()}
+            onRemove={() => {
+              project.clear();
+              setFolderAdded(false);
+            }}
+          />
+        )}
+      </>
+    ),
   };
 
   return {

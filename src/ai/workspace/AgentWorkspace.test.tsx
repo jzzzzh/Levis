@@ -9,6 +9,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import type { AgentConversation } from "../chat/useAgentConversation";
+import type { DocumentDraft } from "./document-draft";
 const saved = {
   id: "saved",
   docPath: "/docs/a.md",
@@ -25,7 +26,7 @@ vi.mock("../chat/chat-history", () => ({
 }));
 import { AgentWorkspace } from "./AgentWorkspace";
 afterEach(cleanup);
-it("restores a saved task but protects pending media from history switches", async () => {
+it("restores a saved task but protects a pending draft from history switches", async () => {
   const restore = vi.fn();
   const conversation = {
     history: [],
@@ -49,7 +50,13 @@ it("restores a saved task but protects pending media from history switches", asy
     onReject: vi.fn(),
     children: null,
   };
-  const { rerender } = render(<AgentWorkspace {...props} pendingMedia />);
+  const draft = {
+    baseMarkdown: "",
+    operations: [
+      { callId: "c", proposal: { action: "append", text: "More." } },
+    ],
+  } as unknown as DocumentDraft;
+  const { rerender } = render(<AgentWorkspace {...props} draft={draft} />);
   fireEvent.click(screen.getByRole("button", { name: "Saved task" }));
   expect(await screen.findByRole("alert")).toBeInTheDocument();
   expect(restore).not.toHaveBeenCalled();

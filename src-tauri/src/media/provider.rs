@@ -68,7 +68,6 @@ pub fn credential_id(capability: &str) -> Result<&'static str, MediaError> {
     match capability {
         "stt" => Ok("__media_stt"),
         "tts" => Ok("__media_tts"),
-        "image" => Ok("__media_image"),
         _ => Err(MediaError::new("configuration", "Unknown media capability")),
     }
 }
@@ -261,7 +260,7 @@ pub(super) fn request_with_voice(
             "Add an API key for this media provider",
         ));
     }
-    let client = super::media_client(if capability == "image" { 180 } else { 120 })
+    let client = super::media_client(120)
         .map_err(|_| MediaError::new("network", "Cannot create media client"))?;
     let suffix = super::protocols::route(&config, capability, suffix)?;
     let mut request = client.post(format!(

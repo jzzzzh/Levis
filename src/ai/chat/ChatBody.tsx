@@ -520,7 +520,7 @@ export function ChatBody({
         onStop={stopAll}
         onEscape={onEscape ?? (() => {})}
         onModeChange={onModeChange}
-        levis={levis?.composer}
+        levisToolbar={levis?.toolbar}
       />
       {footer}
     </>

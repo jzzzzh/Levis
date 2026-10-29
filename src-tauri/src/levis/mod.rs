@@ -1,9 +1,8 @@
 //! Levis: the fork's features on top of upstream Textus, kept apart so a
 //! rebase onto upstream touches as little of its code as possible. Media
-//! (speech, dictation, image jobs) is `crate::media`; the AI diary and the
-//! external agent engines are `ai::diary` and `ai::runtime`. Upstream files
-//! only carry the hooks: the module lines, `with_levis_commands!` in lib.rs,
-//! dictation's window cleanup, ai_agent_message's engine hand-off and
+//! (speech, dictation) is `crate::media`; the AI diary is `ai::diary`.
+//! Upstream files only carry the hooks: the module lines,
+//! `with_levis_commands!` in lib.rs, dictation's window cleanup and
 //! clear_all_drafts' call into workspace_snapshots.
 
 pub mod project_entries;
@@ -30,14 +29,6 @@ macro_rules! with_levis_commands {
             $crate::media::speech::media_synthesize,
             $crate::media::dictation::dictation_start,
             $crate::media::dictation::dictation_stop,
-            $crate::media::jobs::media_start_image,
-            $crate::media::jobs::media_image_jobs,
-            $crate::media::jobs::media_image_prompt,
-            $crate::media::jobs::media_rebase_image_assets,
-            $crate::media::jobs::media_cancel_image,
-            $crate::media::jobs::media_cancel_image_generation,
-            $crate::media::jobs::media_prepare_image,
-            $crate::media::jobs::media_finish_image,
             $($rest)*
         ]
     };

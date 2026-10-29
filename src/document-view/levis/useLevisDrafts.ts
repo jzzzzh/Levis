@@ -10,8 +10,6 @@ import { useWorkspacePersistence } from "../useWorkspacePersistence";
 import type { LevisSurface } from "./useLevisSurface";
 import { onDocChange } from "./doc-changes";
 
-const noImages = async () => {};
-
 /** A proposal upstream's own picture flow owns: a generated picture, or
  *  text carrying one. The Agent's draft takes text only. */
 const ownedUpstream = (proposal: EditProposal) =>
@@ -85,8 +83,6 @@ export function useLevisDrafts({
     path: filePath,
     enabled: recoveryEnabled,
     language,
-    imagePending: false,
-    stopImages: noImages,
   });
   const finishWorkspace = workspace.finish;
   const failed = !!conversation.error;

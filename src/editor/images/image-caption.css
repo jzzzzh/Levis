@@ -1,0 +1,13 @@
+/* A picture's caption in the editor (image-caption.ts). */
+
+.milkdown p.image-caption {
+  margin: calc(var(--md-gap-box) * -0.5) auto var(--md-gap-box);
+  max-width: 36em;
+  text-align: center;
+  font-size: 0.88em;
+  line-height: 1.5;
+  color: var(--editor-muted);
+}
+.milkdown p.image-caption em {
+  font-style: normal;
+}

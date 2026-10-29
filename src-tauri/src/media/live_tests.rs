@@ -1,5 +1,5 @@
 //! Opt-in paid smoke tests. Secrets are loaded inside Rust and never logged.
-use super::{image, minimax, provider};
+use super::{minimax, provider};
 use crate::auth::custom_endpoint::CustomEndpointConfig;
 
 fn request(suffix: &str) -> reqwest::RequestBuilder {
@@ -18,45 +18,10 @@ fn request(suffix: &str) -> reqwest::RequestBuilder {
     .expect("Decode text provider configuration");
     let key = provider::minimax_chat_key(&text, "https://api.minimax.cn/v1")
         .expect("Resolve MiniMax text credential");
-    super::media_client(180)
+    super::media_client(120)
         .expect("Create media client")
         .post(format!("https://api.minimax.cn/v1/{suffix}"))
         .bearer_auth(key)
-}
-
-#[tokio::test]
-#[ignore = "Paid MiniMax image request; requires explicit local opt-in"]
-async fn minimax_live_image() {
-    let config = provider::MediaProviderConfig {
-        provider: "minimax".into(),
-        endpoint: "https://api.minimax.cn/v1".into(),
-        model: "image-01".into(),
-        voice: None,
-        credential_source: Some("minimax-chat".into()),
-        language: None,
-        playback_rate: None,
-    };
-    let generated = image::generate_with(
-        request("image_generation"),
-        config,
-        "A simple blue circle on a plain white background, clean flat illustration, no text",
-        "1024x1024",
-        None,
-    )
-    .await
-    .expect("MiniMax image generation and safe download");
-    let output = std::path::PathBuf::from(
-        std::env::var_os("TEXTUS_MEDIA_TEST_OUTPUT").expect("Set a local test output directory"),
-    );
-    std::fs::create_dir_all(&output).unwrap();
-    let path = output.join(format!("minimax-live-image.{}", generated.ext));
-    crate::atomic::write(&path, generated.bytes).await.unwrap();
-    println!(
-        "MiniMax image validated and saved: {} ({}×{})",
-        path.display(),
-        generated.width,
-        generated.height
-    );
 }
 
 #[tokio::test]

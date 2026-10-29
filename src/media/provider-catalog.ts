@@ -4,8 +4,6 @@ import type {
 } from "../platform/ipc-levis";
 
 type ProviderId = MediaProviderConfig["provider"];
-/** The capabilities Settings › Media configures: speech both ways. */
-export type SpeechCapability = Exclude<MediaCapability, "image">;
 interface CapabilityPreset {
   model: string;
   voice?: string;
@@ -18,7 +16,7 @@ export interface MediaProviderPreset {
   endpoint: string;
   /** Can sign in with the key of the same provider's text service. */
   reusesChatKey?: boolean;
-  capabilities: Partial<Record<SpeechCapability, CapabilityPreset>>;
+  capabilities: Partial<Record<MediaCapability, CapabilityPreset>>;
 }
 
 /** This is the capability matrix implemented by the native media adapters.
@@ -141,7 +139,7 @@ export const MEDIA_PROVIDER_PRESETS: readonly MediaProviderPreset[] = [
     },
   },
 ];
-export function mediaPresets(capability: SpeechCapability) {
+export function mediaPresets(capability: MediaCapability) {
   return MEDIA_PROVIDER_PRESETS.filter(
     (preset) => preset.capabilities[capability],
   );
@@ -153,7 +151,7 @@ export function reusesChatKey(provider: ProviderId): boolean {
 }
 export function mediaProviderDefaults(
   provider: ProviderId,
-  capability: SpeechCapability,
+  capability: MediaCapability,
 ): MediaProviderConfig {
   const preset = MEDIA_PROVIDER_PRESETS.find((p) => p.id === provider);
   const defaults = preset?.capabilities[capability];

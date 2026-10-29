@@ -62,7 +62,6 @@ export function useDocumentWorkspace(
   const [draft, setDraft] = useState<DocumentDraft | null>(null);
   const draftRef = useRef<DocumentDraft | null>(null);
   const routing = useRef(false);
-  const mediaPending = useRef(false);
   const mode = useRef<AgentMode>("review");
   const [conflict, setConflict] = useState(false);
   const [statuses, setStatuses] = useState<Record<string, PendingStatus>>({});
@@ -189,10 +188,7 @@ export function useDocumentWorkspace(
     (nextMode: AgentMode, sessionId: string) => {
       routing.current = true;
       mode.current = nextMode;
-      if (
-        !draftRef.current ||
-        (!draftRef.current.operations.length && !mediaPending.current)
-      ) {
+      if (!draftRef.current?.operations.length) {
         const next = run((ctx) =>
           captureDraft(
             ctx,
@@ -489,9 +485,6 @@ export function useDocumentWorkspace(
     [update],
   );
   const currentDraft = useCallback(() => draftRef.current, []);
-  const setMediaPending = useCallback((pending: boolean) => {
-    mediaPending.current = pending;
-  }, []);
   const rebaseAfterCommit = useCallback(
     (tr: Transaction) => {
       const current = draftRef.current;
@@ -531,7 +524,6 @@ export function useDocumentWorkspace(
     endRouting,
     restore,
     currentDraft,
-    setMediaPending,
     rebaseAfterCommit,
   };
 }

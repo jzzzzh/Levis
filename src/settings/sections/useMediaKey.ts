@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { media } from "../../platform/ipc-levis";
-import type { SpeechCapability } from "../../media/provider-catalog";
+import { media, type MediaCapability } from "../../platform/ipc-levis";
 
 /** A media capability's API key as typed, and whether one is stored. */
-export function useMediaKey(capability: SpeechCapability) {
+export function useMediaKey(capability: MediaCapability) {
   const [key, setKey] = useState("");
   const [hasKey, setHasKey] = useState(false);
   useEffect(() => {

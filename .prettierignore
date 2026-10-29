@@ -27,8 +27,3 @@ src-tauri/crates/aicompat/data/model-capabilities.json
 # Golden output of the Word import (extract/docx.rs tests); its bytes are the test.
 src-tauri/src/extract/testdata/*.md
 textus-plugins/
-
-# Levis: the agent harness's dependencies and the bundled copy
-harness/node_modules
-harness/package-lock.json
-src-tauri/resources

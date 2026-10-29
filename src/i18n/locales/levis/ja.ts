@@ -15,15 +15,4 @@ export const levisJa = {
   defaultHomeLabel: "起動時の画面",
   defaultHomeAgent: "Agent",
   defaultHomeWrite: "執筆",
-  imageRotateLeft: "左に回転",
-  imageRotateRight: "右に回転",
-  imageViewLarge: "画像を表示",
-  imageShowPrompt: "生成プロンプトを表示",
-  imagePromptTitle: "生成プロンプト",
-  imagePromptMissing:
-    "この画像は Textus で生成されたものではないか、記録が残っていません。",
-  imageCopyPrompt: "プロンプトをコピー",
-  imageZoomOut: "縮小",
-  imageZoomIn: "拡大",
-  imageViewerClose: "閉じる",
 } satisfies Translation;

@@ -12,9 +12,9 @@ import { openApp } from "./helpers";
 
 const SECTIONS = ["Origins", "Journey", "Return"];
 
-async function fakeAgent(page: Page, sections = SECTIONS, image = false) {
+async function fakeAgent(page: Page, sections = SECTIONS) {
   await page.evaluate(
-    ({ sections, image }) => {
+    ({ sections }) => {
       type Send = (event: unknown) => void;
       const w = window as unknown as {
         __TAURI_INTERNALS__: {
@@ -23,28 +23,13 @@ async function fakeAgent(page: Page, sections = SECTIONS, image = false) {
         __fake: {
           hold: boolean;
           empty: boolean;
-          jobs: Record<string, unknown>[];
-          finishImages: () => void;
           release: (() => void) | null;
-          requests: { title: string; imageTask: boolean; revision: boolean }[];
+          requests: { title: string; revision: boolean }[];
         };
       };
-      const jobs: Record<string, unknown>[] = [];
       w.__fake = {
         hold: false,
         empty: false,
-        jobs,
-        // The picture service finishes everything still painting.
-        finishImages: () => {
-          for (const job of jobs)
-            if (job.status === "running") {
-              job.status = "ready";
-              job.previewPath = `/tmp/${job.jobId}.png`;
-              job.model = "image-01";
-              job.width = 2;
-              job.height = 1;
-            }
-        },
         release: null,
         requests: [],
       };
@@ -52,35 +37,11 @@ async function fakeAgent(page: Page, sections = SECTIONS, image = false) {
       const original = internals.invoke;
       let call = 0;
       internals.invoke = (cmd, args) => {
-        // Fresh copies, as over IPC: the app compares one poll with the last.
-        if (cmd === "media_image_jobs")
-          return Promise.resolve(JSON.parse(JSON.stringify(jobs)));
-        if (cmd === "media_prepare_image") {
-          const job = jobs.find(
-            (j) => j.jobId === (args as { jobId: string }).jobId,
-          )!;
-          job.status = "prepared";
-          // An untitled document's pictures live by full path (fs.rs).
-          return Promise.resolve(`/tmp/assets/${job.jobId}.png`);
-        }
-        if (cmd === "media_finish_image") {
-          const a = args as { jobId: string; accepted: boolean };
-          const job = jobs.find((j) => j.jobId === a.jobId)!;
-          job.status = a.accepted ? "committed" : "ready";
-          job.assetSrc = a.accepted ? `/tmp/assets/${job.jobId}.png` : null;
-          return Promise.resolve(null);
-        }
-        if (
-          cmd === "media_cancel_image" ||
-          cmd === "media_cancel_image_generation"
-        )
-          return Promise.resolve(null);
         if (cmd === "project_folder") return Promise.resolve(null);
         if (cmd === "list_project_entries") return Promise.resolve([]);
         if (cmd !== "ai_agent_message") return original(cmd, args);
         const a = args as {
           message: string;
-          imageTask?: unknown;
           onEvent?: { onmessage?: Send };
         };
         const send: Send = (event) => a.onEvent?.onmessage?.(event);
@@ -91,11 +52,10 @@ async function fakeAgent(page: Page, sections = SECTIONS, image = false) {
               text: JSON.stringify({
                 title: "Journey West",
                 guide: "Plain words",
-                sections: sections.map((title, i) => ({
+                sections: sections.map((title) => ({
                   title,
                   brief: `About ${title}`,
                   length: 120,
-                  image: image && i === 1,
                 })),
               }),
             },
@@ -104,7 +64,7 @@ async function fakeAgent(page: Page, sections = SECTIONS, image = false) {
           /Write section \d+, "([^"]+)"/.exec(a.message)?.[1] ?? "?";
         const revision = a.message.includes("notes on the previous draft");
         const first = a.message.includes("level-one heading");
-        w.__fake.requests.push({ title, imageTask: !!a.imageTask, revision });
+        w.__fake.requests.push({ title, revision });
         // A reply with no proposal in it (what a failed turn looks like).
         if (w.__fake.empty)
           return Promise.resolve([
@@ -145,51 +105,6 @@ async function fakeAgent(page: Page, sections = SECTIONS, image = false) {
           output: "ok",
         };
         const report = { kind: "Assistant", text: `${title} is written.` };
-        // A picture for this section, still painting when the reply ends.
-        const permission = a.imageTask as
-          | {
-              taskId: string;
-              documentId: string;
-              generationId: string;
-              baseRevision: number;
-            }
-          | undefined;
-        const pictureTurns: unknown[] = [];
-        if (permission) {
-          const jobId = `pic-${call}`;
-          jobs.push({
-            jobId,
-            ...permission,
-            sequence: 1,
-            request: {
-              prompt: `A picture of ${title}`,
-              anchor: `First paragraph of ${title}${tag}.`,
-              alt: title,
-              caption: `${title} at dusk`,
-              size: "1024x1024",
-            },
-            status: "running",
-            previewPath: null,
-            model: null,
-            error: null,
-            width: null,
-            height: null,
-            assetSrc: null,
-          });
-          pictureTurns.push(
-            {
-              kind: "ToolCall",
-              call_id: `g${call}`,
-              name: "generate_image",
-              arguments: JSON.stringify({ prompt: `A picture of ${title}` }),
-            },
-            {
-              kind: "ToolResult",
-              call_id: `g${call}`,
-              output: JSON.stringify({ jobId, status: "running" }),
-            },
-          );
-        }
         const third = Math.floor(args2.length / 3);
         const steps: (() => void | Promise<void>)[] = [
           () => send({ type: "toolStart", callId: id, name: "propose_edit" }),
@@ -220,7 +135,6 @@ async function fakeAgent(page: Page, sections = SECTIONS, image = false) {
                   w.__fake.release = resolve;
                 })
               : undefined,
-          ...pictureTurns.map((turn) => () => send({ type: "turn", turn })),
           () => send({ type: "turn", turn: check }),
           () => send({ type: "turn", turn: checked }),
           () => send({ type: "turn", turn: report }),
@@ -233,7 +147,6 @@ async function fakeAgent(page: Page, sections = SECTIONS, image = false) {
                 { kind: "User", text: a.message },
                 proposal,
                 result,
-                ...pictureTurns,
                 check,
                 checked,
                 report,
@@ -247,7 +160,7 @@ async function fakeAgent(page: Page, sections = SECTIONS, image = false) {
         });
       };
     },
-    { sections, image },
+    { sections },
   );
 }
 
@@ -309,16 +222,7 @@ async function expectOnce(page: Page, phrases: string[]) {
   expect([...at].sort((x, y) => x - y)).toEqual(at);
 }
 
-// A 2x1 PNG for every picture the app asks to show.
-const PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAYAAAD0In+KAAAAEUlEQVR42mP8z8DwnxEIGAEAJ+YD/2jvfVUAAAAASUVORK5CYII=",
-  "base64",
-);
-
 test.beforeEach(async ({ page }) => {
-  await page.route("**/__dev-assets/**", (route) =>
-    route.fulfill({ body: PNG, contentType: "image/png" }),
-  );
   await openApp(page, { home: true, settings: { language: "en" } });
   await fakeAgent(page);
 });

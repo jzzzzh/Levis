@@ -1,0 +1,138 @@
+/* Always loaded with the editor (SurfaceSwitch.tsx): the window bar's
+   Agent | Write switch, the page rising back on Write, and the chrome the
+   Agent surface hides. workspace.css loads with the Agent surface. */
+
+/* The page, back from Agent: it rises into place (the editor's root,
+   for the length of the animation - MilkdownEditor). */
+.surface-arrive {
+  animation: surface-arrive var(--dur-slow) var(--ease-spring) both;
+}
+
+@keyframes surface-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--motion-distance-md) * 1.5));
+  }
+}
+
+/* ---------- Agent | 写作 (SurfaceSwitch.tsx) ----------
+   One segmented switch at the window bar's start, in both surfaces. The
+   highlight slides to the side that is on with a little give (the bouncy
+   spring), and the icon of the side just turned on gives a small pop. */
+.surface-switch {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  margin-left: 2px;
+  padding: 2px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--editor-text) 6%, transparent);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--editor-border, #8884) 55%, transparent);
+  animation: motion-fade-in var(--dur-base) var(--ease-out);
+}
+
+.surface-switch-thumb {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  z-index: 0;
+  border-radius: var(--radius-pill);
+  background: var(--editor-bg, var(--bg));
+  box-shadow:
+    var(--shadow-switch-thumb),
+    0 0 0 0.5px color-mix(in srgb, var(--editor-border, #8884) 80%, transparent);
+}
+
+.surface-switch.is-ready .surface-switch-thumb {
+  transition:
+    transform var(--dur-sheet, 380ms) var(--ease-spring-bouncy),
+    scale var(--dur-fast) var(--ease-out);
+}
+
+/* Pressed: the highlight gives under the finger before it moves. */
+.surface-switch:has(.surface-switch-option:active) .surface-switch-thumb {
+  scale: 0.96;
+}
+
+.surface-switch-option {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 11px 0 9px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--editor-muted, inherit);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+
+.surface-switch-option:not([aria-pressed="true"]):hover,
+.surface-switch-option[aria-pressed="true"] {
+  color: var(--editor-text);
+}
+
+.surface-switch-option:focus-visible {
+  outline: 2px solid var(--editor-accent, var(--chrome-primary));
+  outline-offset: 1px;
+}
+
+.surface-switch-option svg {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  transition:
+    color var(--dur-fast) var(--ease-standard),
+    transform var(--dur-base) var(--ease-spring);
+}
+
+.surface-switch-option:not([aria-pressed="true"]):hover svg {
+  transform: scale(1.12);
+}
+
+.surface-switch-option.is-agent[aria-pressed="true"] svg {
+  color: var(--editor-accent, var(--chrome-primary));
+}
+
+.surface-switch.is-ready .surface-switch-option[aria-pressed="true"] svg {
+  animation: surface-switch-pop var(--dur-sheet, 380ms)
+    var(--ease-spring-bouncy);
+}
+
+@keyframes surface-switch-pop {
+  0% {
+    transform: scale(0.6) rotate(-20deg);
+  }
+  60% {
+    transform: scale(1.15) rotate(6deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .surface-switch.is-ready .surface-switch-option[aria-pressed="true"] svg {
+    animation: none;
+  }
+  .surface-switch:has(.surface-switch-option:active) .surface-switch-thumb {
+    scale: none;
+  }
+}
+
+/* In Agent the window bar's chat toggle would open a second Agent: hidden
+   while the active document shows the Agent surface. */
+:root[data-levis-agent] .window-bar-toggle {
+  display: none;
+}

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { userMessageBody } from "../chat/user-message";
 import {
-  ensureIllustrated,
   looksLikePlanFile,
   pictureSrc,
   parsePlan,
@@ -15,8 +14,8 @@ const plan: WritingPlan = {
   title: "西游记概要",
   guide: "面向中学生，语言平实",
   sections: [
-    { title: "缘起", brief: "石猴出世", length: 400, image: true },
-    { title: "取经", brief: "师徒西行", length: 600, image: false },
+    { title: "缘起", brief: "石猴出世", length: 400 },
+    { title: "取经", brief: "师徒西行", length: 600 },
   ],
 };
 
@@ -59,35 +58,34 @@ describe("project pictures", () => {
   });
 
   it("are offered to the planner and kept only when real, once each", () => {
-    const prompt = planningPrompt("m", "", true, true, ["img/a.jpg"]);
+    const prompt = planningPrompt("m", "", true, ["img/a.jpg"]);
     expect(prompt).toContain("- img/a.jpg");
     expect(prompt).toContain('"picture"');
     const parsed = parsePlan(
       JSON.stringify({
         sections: [
-          { title: "一", picture: "img/a.jpg", image: true },
+          { title: "一", picture: "img/a.jpg" },
           { title: "二", picture: "img/a.jpg" },
           { title: "三", picture: "made-up.png" },
         ],
       }),
       ["img/a.jpg"],
     );
-    expect(parsed?.sections.map((s) => [s.picture, s.image])).toEqual([
-      ["img/a.jpg", false],
-      [undefined, false],
-      [undefined, false],
+    expect(parsed?.sections.map((s) => s.picture)).toEqual([
+      "img/a.jpg",
+      undefined,
+      undefined,
     ]);
   });
 
-  it("a section with one is written around it, not generated", () => {
+  it("a section with one is written around it", () => {
     const prompt = sectionPrompt(
       plan,
       0,
-      { images: true, first: false, pictureSrc: "img/a%20b.jpg" },
+      { first: false, pictureSrc: "img/a%20b.jpg" },
       true,
     );
     expect(prompt).toContain("![简短的图片说明](img/a%20b.jpg)");
-    expect(prompt).not.toContain("generate_image 为本节");
   });
 });
 
@@ -107,45 +105,17 @@ describe("planningPrompt", () => {
   });
 });
 
-describe("illustrations", () => {
-  it("asks the planner to mark sections when pictures are on", () => {
-    expect(planningPrompt("m", "", true, true)).toContain('"image":true');
-    expect(planningPrompt("m", "", true, false)).not.toContain('"image":true');
-  });
-
-  it("gives an unmarked plan pictures, about one in three", () => {
-    const bare = {
-      ...plan,
-      sections: Array.from({ length: 5 }, (_, i) => ({
-        title: `S${i}`,
-        brief: "",
-        length: 300,
-        image: false,
-      })),
-    };
-    expect(ensureIllustrated(bare).sections.map((s) => s.image)).toEqual([
-      true,
-      false,
-      false,
-      true,
-      false,
-    ]);
-    // A plan the model marked is left as it is.
-    expect(ensureIllustrated(plan)).toBe(plan);
-  });
-});
-
 describe("parsePlan", () => {
   it("reads the JSON object out of a chatty reply", () => {
     const parsed = parsePlan(
-      '好的：\n```json\n{"title":" 标题 ","guide":"g","sections":[{"title":"一","brief":"b","length":800.4,"image":true},{"title":"二"}]}\n```',
+      '好的：\n```json\n{"title":" 标题 ","guide":"g","sections":[{"title":"一","brief":"b","length":800.4},{"title":"二"}]}\n```',
     );
     expect(parsed).toEqual({
       title: "标题",
       guide: "g",
       sections: [
-        { title: "一", brief: "b", length: 800, image: true },
-        { title: "二", brief: "", length: 600, image: false },
+        { title: "一", brief: "b", length: 800 },
+        { title: "二", brief: "", length: 600 },
       ],
     });
   });
@@ -169,26 +139,24 @@ describe("parsePlan", () => {
 
 describe("sectionPrompt", () => {
   it("asks for one appended section with the outline and guide", () => {
-    const prompt = sectionPrompt(plan, 1, { images: true, first: false }, true);
+    const prompt = sectionPrompt(plan, 1, { first: false }, true);
     expect(prompt).toContain("【自动写作 2/2】");
     expect(prompt).toContain("「取经」");
     expect(prompt).toContain("2. 取经  ← 本节");
     expect(prompt).toContain("面向中学生");
     expect(prompt).toContain("append");
-    // Not a section the plan illustrates, and not the first one.
-    expect(prompt).not.toContain("generate_image");
+    // Not the first one.
     expect(prompt).not.toContain("一级标题");
   });
 
-  it("opens the document and illustrates when the plan says so", () => {
+  it("opens the document on the first section", () => {
     const prompt = sectionPrompt(
       plan,
       0,
-      { images: true, first: true, revision: "更生动" },
+      { first: true, revision: "更生动" },
       true,
     );
     expect(prompt).toContain("一级标题「西游记概要」");
-    expect(prompt).toContain("generate_image");
     expect(prompt).toContain("更生动");
   });
 
@@ -196,17 +164,11 @@ describe("sectionPrompt", () => {
     const prompt = sectionPrompt(
       plan,
       1,
-      { images: false, first: false, revision: "加一个例子" },
+      { first: false, revision: "加一个例子" },
       true,
     );
     expect(userMessageBody(prompt)).toBe(
       "【自动写作 2/2】取经（按意见重写：加一个例子）",
     );
-  });
-
-  it("leaves images out when the run has them off", () => {
-    expect(
-      sectionPrompt(plan, 0, { images: false, first: true }, false),
-    ).not.toContain("generate_image");
   });
 });
