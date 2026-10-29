@@ -25,6 +25,8 @@ export default defineConfig(async () => ({
       "**/node_modules/**",
       "**/dist/**",
       "e2e/**",
+      "harness/**",
+      "scripts/harness-build.test.mjs",
       "src-tauri/**",
       ".claude/**",
       ".cache/**",

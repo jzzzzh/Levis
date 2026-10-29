@@ -261,11 +261,13 @@ const RESIDUE_PHRASES: &[&str] = &[
 ];
 
 static PLACEHOLDER_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?i)\[(?:your|insert|company|recipient|date|name|first name|last name|title|address|phone|email)[^\]\n]{0,30}\]|\b(?:INSERT|PLACEHOLDER)_[A-Z_]+\b|\b(?:20[0-9X]{2}|XXXX)-XX-XX\b|[［\[【](?:您的|你的|貴方の|あなたの)?(?:姓名|名字|名前|公司名称|公司名稱|会社名|日期|日付|联系方式|聯絡方式)[］\]】]|XXXX年XX月XX日|20XX年|○○年○○月○○日").unwrap()
+    Regex::new(r"(?i)\[(?:your|insert|company|recipient|date|name|first name|last name|title|address|phone|email)[^\]\n]{0,30}\]|\b(?:INSERT|PLACEHOLDER)_[A-Z_]+\b|\b(?:20[0-9X]{2}|XXXX)-XX-XX\b|[［\[](?:您的|你的|貴方の|あなたの)?(?:姓名|名字|名前|公司名称|公司名稱|会社名|日期|日付|联系方式|聯絡方式)[］\]]|XXXX年XX月XX日|20XX年|○○年○○月○○日").unwrap()
 });
 
 /// shared.residue: chatbot phrases and placeholders left in body text.
-/// Quoted text is someone talking about the phrase, not residue.
+/// Quoted text is someone talking about the phrase, not residue. A blank
+/// in full-width brackets (【开幕日期】) is not residue: the Agent writes
+/// unknown facts that way on purpose, for the author to fill in (Levis).
 fn residue(t: &Text, ctx: &Ctx, out: &mut Out) {
     let lower: Vec<char> = t.chars.iter().flat_map(|c| c.to_lowercase()).collect();
     if lower.len() == t.len() {

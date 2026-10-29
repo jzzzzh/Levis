@@ -12,5 +12,11 @@ fn main() {
         // SAFETY: first statement of main, single-threaded.
         unsafe { std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1") };
     }
+    // Levis: dictation's privacy prompts need their own responsible process.
+    #[cfg(all(target_os = "macos", debug_assertions))]
+    dev_responsibility::run_as_own_responsible_process();
     textus_lib::run()
 }
+
+#[cfg(all(target_os = "macos", debug_assertions))]
+mod dev_responsibility;

@@ -139,6 +139,22 @@ fn doubled_words_with_their_guards() {
 }
 
 #[test]
+fn a_blank_to_fill_is_not_residue() {
+    assert!(hits(
+        "shared.residue",
+        Lang::ZhHans,
+        None,
+        "展览将于【开幕日期】在【场馆】开幕，联系【联系方式】。"
+    )
+    .is_empty());
+    // The square-bracket chatbot form still is.
+    assert_eq!(
+        hits("shared.residue", Lang::ZhHans, None, "请联系[联系方式]。").len(),
+        1
+    );
+}
+
+#[test]
 fn residue_but_not_when_quoted() {
     assert_eq!(
         hits(

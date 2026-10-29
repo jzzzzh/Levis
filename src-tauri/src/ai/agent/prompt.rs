@@ -180,6 +180,9 @@ pub(crate) fn build_instructions(
             .to_string(),
         );
         sections.push(RULES_TOOL_INSTRUCTIONS.to_string());
+        if mode == AgentMode::Write {
+            sections.push(crate::levis::BLANKS_INSTRUCTION.to_string());
+        }
         sections.push(workspace_section(workspace, ui_language));
     }
 

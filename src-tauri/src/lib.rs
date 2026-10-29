@@ -14,8 +14,10 @@ mod commands;
 mod distribution;
 mod ext_stats;
 mod extract;
+mod levis;
 #[cfg(desktop)]
 mod mcp;
+mod media;
 #[cfg(desktop)]
 mod menu;
 mod net;
@@ -104,6 +106,7 @@ fn desktop_builder(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<tauri:
                 schedule::app_state::changed(app);
             }
             if matches!(event, tauri::WindowEvent::Destroyed) {
+                media::dictation::stop_window(window.label());
                 let no_other_windows = app
                     .webview_windows()
                     .keys()
@@ -235,7 +238,7 @@ pub fn run() {
         })
         // One handler list for both targets: commands gated #[cfg(desktop)] are not
         // registered on iOS, where the frontend never calls them.
-        .invoke_handler(crate::with_plugin_commands![
+        .invoke_handler(crate::with_levis_commands![
             // Shared: desktop and iOS.
             take_pending_window_paths,
             take_pending_open_paths,

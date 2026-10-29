@@ -80,9 +80,33 @@ pub async fn ai_agent_message(
     ui_language: Option<String>,
     // The image model; None for none, and from an older frontend.
     image_model: Option<crate::ai::images::ImageModel>,
+    // Levis: an external agent engine to run the request instead, its model,
+    // and its image task permission (ai::runtime). None runs it here.
+    engine: Option<String>,
+    engine_model: Option<String>,
+    image_task: Option<crate::media::jobs::ImageTaskPermission>,
     on_event: Channel<StreamEvent>,
 ) -> Result<Vec<AgentTurn>, String> {
     crate::ai::ensure_on(&app)?;
+    if let Some(engine) = engine {
+        let document = Document::from_blocks(blocks).to_string();
+        return crate::ai::runtime::run(
+            app,
+            engine,
+            engine_model,
+            provider,
+            document,
+            history,
+            message,
+            images,
+            mode,
+            model,
+            request_id,
+            image_task,
+            on_event,
+        )
+        .await;
+    }
     let web_service = web_search
         .then(|| web::resolve_service(&app, search_service.as_deref(), searxng_url.as_deref()))
         .flatten();

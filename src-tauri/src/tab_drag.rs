@@ -17,6 +17,15 @@ use std::sync::atomic::{AtomicBool, Ordering};
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(test, derive(specta::Type))]
 pub struct DetachedTab {
+    // Levis: the auto-writing workspace the tab carries along. Kept out of the
+    // generated bindings, which the fork's frontend doesn't read it from.
+    #[cfg_attr(test, specta(skip))]
+    #[serde(
+        rename = "workspaceId",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    workspace_id: Option<String>,
     path: Option<String>,
     content: String,
     #[serde(rename = "savedContent")]

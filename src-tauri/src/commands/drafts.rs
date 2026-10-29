@@ -108,6 +108,7 @@ pub async fn clear_draft_snapshot(app: AppHandle, tab_id: String) -> Result<(), 
 #[tauri::command]
 #[cfg_attr(test, specta::specta)]
 pub async fn clear_all_drafts(app: AppHandle) -> Result<(), String> {
+    crate::levis::workspace_snapshots::clear_all(&app).await?;
     match fs::remove_dir_all(drafts_dir(&app)?).await {
         Ok(()) => Ok(()),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),

@@ -53,3 +53,8 @@ playwright-report/
 # The official plugins checked out beside the app, for the dev server
 # and the plugin flows (vite.dev-plugins.ts); a repository of its own.
 textus-plugins/
+
+# Levis: local generated media, the bundled agent harness
+output/
+harness/node_modules/
+src-tauri/resources/harness/

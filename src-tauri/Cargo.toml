@@ -43,6 +43,8 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
+# Levis: compiles the macOS dictation bridge (src/media/dictation.m).
+cc = "1"
 
 [dependencies]
 # macos-private-api: required for transparent webview windows (the floating
@@ -72,6 +74,11 @@ base64 = "0.22"
 sha2 = "0.10"
 reqwest = { version = "0.12", default-features = false, features = ["json", "multipart", "rustls-tls"] }
 aicompat = { path = "crates/aicompat" }
+# Levis media (src/media/): process groups for the agent runtime and the
+# dev-build relaunch (ai/runtime.rs, dev_responsibility.rs), and validating
+# generated images (media/image.rs).
+libc = "0.2"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
 
 # Markdown extraction (src/extract/), for chat attachments (commands/
 # attachment.rs) and Textus AI's project tools (ai/project.rs). Everything

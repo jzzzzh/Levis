@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "resources": {
+      "resources/harness/": "harness/"
+    },
+    "macOS": {
+      "infoPlist": "Info.plist",
+      "entitlements": "entitlements.plist"
+    }
+  }
+}
