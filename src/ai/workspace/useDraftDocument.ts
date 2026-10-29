@@ -20,8 +20,16 @@ import {
   markDraftChanges,
   withChangeActions,
   type ChangeTarget,
+  type DraftChanges,
 } from "./draft-diff";
 import type { workspaceLabels } from "./labels";
+import { useLazyChunks } from "./useLazyChunks";
+import {
+  LARGE_PREVIEW,
+  lazyImages,
+  windowedPreview,
+  type WindowedPreview,
+} from "./windowed-preview";
 
 /** Changes whose paragraphs can be taken one at a time: text added at
  *  the end (useDocumentWorkspace's explode says why only that). */
@@ -114,11 +122,15 @@ export function useDraftDocument({
     draft?.operations.length ? preview : "",
   );
   const baseMarkdown = draft?.baseMarkdown ?? "";
+  // A very long document is windowed (windowed-preview.ts): drawn whole,
+  // it took the renderer down.
+  const large =
+    shownDocument.length > LARGE_PREVIEW || baseMarkdown.length > LARGE_PREVIEW;
   const baseHtml = useMemo(
-    () => renderDocumentHtml(baseMarkdown),
+    () => (large ? "" : renderDocumentHtml(baseMarkdown)),
     // katexReady: formulas render once KaTeX is loaded.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [baseMarkdown, katexReady],
+    [baseMarkdown, large, katexReady],
   );
   // One rendering for the document and the draft, the draft's changes
   // marked.
@@ -128,27 +140,38 @@ export function useDraftDocument({
     [pendingOps, rejected],
   );
   const marked = useMemo(() => {
-    const { html, changes } = draftPreview
-      ? markDraftChanges(baseHtml, renderDocumentHtml(draftPreview))
-      : { html: renderDocumentHtml(shownDocument), changes: 0 };
+    const { html, changes, chunks }: Partial<WindowedPreview> & DraftChanges =
+      large
+        ? windowedPreview(
+            draftPreview ? baseMarkdown : null,
+            draftPreview || shownDocument,
+          )
+        : draftPreview
+          ? markDraftChanges(baseHtml, renderDocumentHtml(draftPreview))
+          : { html: renderDocumentHtml(shownDocument), changes: 0 };
     return {
       changes,
+      chunks,
       inner: {
-        __html: withImageSrc(
-          withChangeActions(html, draftPreview ? changeTargets : [], {
-            accept: labels.take,
-            reject: labels.dontTake,
-            acceptPart: labels.takePart,
-            rejectPart: labels.dontTakePart,
-            restore: labels.restore,
-          }),
-          scoped ? undefined : imageSrc,
+        __html: lazyImages(
+          withImageSrc(
+            withChangeActions(html, draftPreview ? changeTargets : [], {
+              accept: labels.take,
+              reject: labels.dontTake,
+              acceptPart: labels.takePart,
+              rejectPart: labels.dontTakePart,
+              restore: labels.restore,
+            }),
+            scoped ? undefined : imageSrc,
+          ),
         ),
       },
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     draftPreview,
+    large,
+    baseMarkdown,
     baseHtml,
     shownDocument,
     changeTargets,
@@ -156,6 +179,25 @@ export function useDraftDocument({
     scoped,
     katexReady,
   ]);
+  const renderChunk = useCallback(
+    (markdown: string, into: HTMLElement) => {
+      into.innerHTML = lazyImages(
+        withImageSrc(
+          renderDocumentHtml(markdown),
+          scoped ? undefined : imageSrc,
+        ),
+      );
+      if (scoped)
+        for (const img of into.querySelectorAll("img")) {
+          const src = img.getAttribute("src");
+          if (src) showDocImage(img, src, documentPath);
+        }
+    },
+    // katexReady: formulas render once KaTeX is loaded.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [scoped, imageSrc, documentPath, katexReady],
+  );
+  useLazyChunks(documentView, marked.chunks, renderChunk);
   const [changeAt, setChangeAt] = useState(-1);
   /** Scrolls the panel to change `index` (wrapping) and flashes it. */
   const showChange = (index: number) => {

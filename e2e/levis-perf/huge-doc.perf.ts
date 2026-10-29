@@ -212,8 +212,14 @@ async function save(page: Page, path: string) {
 
 /** Write → Agent: until the Agent's preview of this document is drawn. */
 async function openAgent(page: Page) {
+  // Found before the clock starts: a role query computes the accessible
+  // name of every element on the page - 7.5 s of Playwright's own work
+  // under a 5M document, not the app's.
+  const button = await page
+    .getByRole("button", { name: "Agent", exact: true })
+    .elementHandle();
   const start = Date.now();
-  await page.getByRole("button", { name: "Agent", exact: true }).click();
+  await button.click();
   await page.waitForFunction(
     () => {
       const preview = document.querySelector(

@@ -693,6 +693,11 @@
 .workspace-document .agent-markdown {
   font-size: 15px;
 }
+/* A long document's chunk drawn as it scrolls near (windowed-preview.ts):
+   its own block, so its height holds its first and last margins. */
+.workspace-lazy {
+  display: flow-root;
+}
 .workspace-changes {
   border-top: 1px solid
     color-mix(in srgb, var(--editor-border, #8884) 70%, transparent);

@@ -46,7 +46,13 @@ document, cycle after cycle; DOM nodes grow the same way).
 
 - **Opening the Agent on a 1M+ document crashes the renderer** (or does not
   finish in 10 minutes at 10M): the Agent's preview renders the whole
-  document, every picture with it. 100k is fine (0.6 s).
+  document, every picture with it. 100k is fine (0.6 s). Fixed: past 200k
+  characters the preview is windowed (`windowed-preview.ts`) - the draft's
+  changes with context, the rest drawn in chunks as they scroll near - its
+  pictures load lazily, and a long document is no longer serialized when the
+  Agent opens (14 s at 5M). Now 0.5 s at 1M (heap 72 MB) and 1.6 s at 5M
+  (236 MB). The bench now finds the Agent button before its clock starts: the
+  role query alone took 7.5 s at 5M.
 - The release build didn't link (`___isPlatformVersionAtLeast` from
   `@available` in `dictation.m`); fixed while making this baseline.
 - Agent ⇄ Write switching keeps no memory (0 MB per cycle).
