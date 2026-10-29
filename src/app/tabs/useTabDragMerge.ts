@@ -20,6 +20,7 @@ import { windowIpc, type WindowBounds } from "../../platform/ipc";
 import { flushPendingWrites } from "../../storage/pending-writes";
 import { useLatest } from "../../utils/hooks/useLatest";
 import { canUseWindows } from "../../platform/capabilities";
+import { confirmWorkspaceClose } from "../../document/workspace-close";
 
 // Moving tabs between windows, as drag source (handed to Rust's floating
 // drag) and as merge target. Within-bar reordering lives in the tab bar.
@@ -87,6 +88,9 @@ export function useTabDragMerge(opts: {
       const tab = liveTabs().find((tb) => tb.id === id);
       if (!tab) return;
       try {
+        // Levis: the Agent work travels with the document, or stays.
+        if (!(await confirmWorkspaceClose([id], "handoff"))) return;
+        await flushPendingWrites();
         await windowIpc.startFloatingTabDrag(floatingDragArgs(tab, t, false));
       } catch {
         return; // drag couldn't start (unsupported platform / one already active) - keep the tab
@@ -136,6 +140,11 @@ export function useTabDragMerge(opts: {
       const tab = latest.current.liveTabs()[0];
       if (!tab) return;
       windowDragRef.current = "handed-off";
+      // Levis: the Agent work is settled before the window goes.
+      if (!(await confirmWorkspaceClose([tab.id], "handoff"))) {
+        windowDragRef.current = "idle";
+        return;
+      }
       // Rust destroys this window at once; held-back storage writes are sent
       // first and land before the drag command.
       void flushPendingWrites();

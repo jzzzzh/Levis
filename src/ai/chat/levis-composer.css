@@ -1,0 +1,208 @@
+/* Levis: the Agent composer's tools menu, its chips and dictation
+   (levis-chat.tsx, ai/workspace/AgentTools.tsx). */
+
+.inline-chat-toolbar .inline-dictation {
+  margin-left: 0;
+}
+
+.composer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px 0 8px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--editor-accent) 11%, transparent);
+  color: var(--editor-accent);
+  font: inherit;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  cursor: pointer;
+  animation: motion-pop-in var(--dur-base) var(--ease-spring);
+  transition:
+    background-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard),
+    transform var(--dur-instant) var(--ease-standard);
+}
+
+.composer-chip:not(:disabled):hover {
+  background: color-mix(in srgb, var(--editor-accent) 18%, transparent);
+}
+
+.composer-chip:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+/* The mode is always one of them: a quiet label that opens the menu. */
+.composer-chip.is-mode {
+  background: transparent;
+  color: var(--editor-muted);
+  animation: none;
+}
+
+.composer-chip.is-mode:not(:disabled):hover {
+  background: color-mix(in srgb, var(--editor-text) 7%, transparent);
+  color: var(--editor-text);
+}
+
+.composer-chip-icon {
+  display: inline-grid;
+  place-items: center;
+}
+
+.composer-chip-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.composer-chip-icon .composer-menu-glyph {
+  font-size: 13px;
+}
+
+.composer-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + var(--space-2));
+  z-index: var(--z-popover);
+  max-height: min(440px, 60vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-1) var(--space-2) var(--space-2);
+  border: 1px solid var(--editor-border, var(--border-color));
+  border-radius: var(--radius-surface);
+  background: var(--editor-bg, var(--bg));
+  box-shadow: var(--shadow-popover);
+  transform-origin: bottom left;
+  animation: composer-menu-in var(--dur-base) var(--ease-out);
+}
+
+@keyframes composer-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+
+.composer-menu-title {
+  padding: var(--space-2) var(--space-2) 2px;
+  color: var(--editor-muted);
+  font-size: var(--text-xs);
+}
+
+.composer-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 34px;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-button);
+  background: transparent;
+  color: var(--editor-text);
+  font: inherit;
+  font-size: var(--text-md);
+  text-align: left;
+  cursor: pointer;
+  animation: composer-menu-item-in var(--dur-base) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 12ms);
+  transition: background-color var(--dur-instant) var(--ease-standard);
+}
+
+@keyframes composer-menu-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+}
+
+.composer-menu-item:not(:disabled):hover,
+.composer-menu-item:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--editor-text) 6%, transparent);
+}
+
+.composer-menu-icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 18px;
+  color: var(--editor-muted);
+}
+
+.composer-menu-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.composer-menu-item[aria-checked="true"] .composer-menu-icon {
+  color: var(--editor-accent);
+}
+
+.composer-menu-glyph {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.composer-menu-label {
+  flex: none;
+  white-space: nowrap;
+}
+
+.composer-menu-hint {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--editor-muted);
+  font-size: var(--text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-menu-check {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-left: auto;
+  color: var(--editor-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .composer-menu,
+  .composer-menu-item,
+  .composer-chip {
+    animation: none;
+  }
+
+  .inline-chat-toolbar .inline-chat-attach svg {
+    transition: none;
+  }
+}
+
+.composer-menu.is-below {
+  top: calc(100% + var(--space-2));
+  bottom: auto;
+  transform-origin: top left;
+  animation-name: composer-menu-below;
+}
+
+@keyframes composer-menu-below {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+}
+
+.inline-chat-toolbar .levis-agent-tools[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--editor-accent) 14%, transparent);
+  color: var(--editor-accent);
+}
+
+.levis-agent-tools-host {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}

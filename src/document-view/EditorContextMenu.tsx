@@ -13,6 +13,7 @@ import type { Strings } from "../i18n/strings";
 import type { ImageLocation } from "../editor/images/missing-image";
 import { useImageService } from "../ai/image-models";
 import { selectImage } from "../editor/editor-menu";
+import { levisMenuItems } from "./levis/menu-actions";
 
 /** Where the editor's menu is open, and on what. */
 export type EditorMenuState = {
@@ -97,6 +98,7 @@ export function EditorContextMenu({
               // Textus AI is off. The tour's practice tab always offers Ask
               // AI so its lessons work.
               aiItems: [
+                ...levisMenuItems(run),
                 ...(aiFeatures(settings, inTour).chat && !menu.phone
                   ? [{ label: t.askAi, onSelect: openAgentConversation }]
                   : []),

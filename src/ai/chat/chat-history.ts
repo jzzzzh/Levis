@@ -25,6 +25,12 @@ export interface ChatSummary {
    *  stored relative to it ("documents:..."), since that folder moves with
    *  every reinstall and update. */
   docPath: string | null;
+  /** The document's identity in the editor (a tab's workspaceId or id), so
+   *  reopening the task finds its tab while it is still open. */
+  documentId?: string;
+  /** An untitled document's text after the last exchange: reopening the
+   *  task brings it back in a tab even when the tab is gone. Capped. */
+  snapshot?: string;
   /** First user message, cleaned and truncated - the list's display name. */
   title: string;
   updatedAt: number;
@@ -158,7 +164,44 @@ export async function loadConversationTurns(
  *  to the trash. A no-op while Settings > Privacy > Chat History is off. */
 export function saveConversation(entry: ChatHistoryEntry) {
   if (!loadSettings().enableChatHistory) return;
-  history.upsert(entry);
+  // Keeps the document link rememberConversationDocument added.
+  const previous = history.get().find((e) => e.id === entry.id);
+  history.upsert({
+    documentId: previous?.documentId,
+    snapshot: entry.docPath ? undefined : previous?.snapshot,
+    ...entry,
+  });
+}
+
+// Levis: a conversation remembers its document, so a past Agent task
+// reopens with it (ai/workspace).
+const MAX_SNAPSHOT_CHARS = 200_000;
+
+/** Ties a saved conversation to its document: the identity always, the text
+ *  only while the document has no file to reopen. */
+export async function rememberConversationDocument(
+  id: string,
+  documentId: string,
+  snapshot: string | null,
+) {
+  if (!loadSettings().enableChatHistory) return;
+  const summary = history.get().find((e) => e.id === id);
+  if (!summary) return;
+  const next = snapshot ? snapshot.slice(0, MAX_SNAPSHOT_CHARS) : undefined;
+  if (summary.documentId === documentId && summary.snapshot === next) return;
+  const turns = await loadConversationTurns(id).catch(() => null);
+  if (!turns) return;
+  history.upsert({ ...summary, turns, documentId, snapshot: next });
+}
+
+/** A saved conversation with its turns; undefined when it is gone. */
+export async function findConversation(
+  id: string,
+): Promise<ChatHistoryEntry | undefined> {
+  const summary = history.get().find((e) => e.id === id);
+  if (!summary) return undefined;
+  const turns = await loadConversationTurns(id).catch(() => null);
+  return turns ? { ...summary, turns } : undefined;
 }
 
 /** A document Textus saved under a new path (Save As, a rename) takes its

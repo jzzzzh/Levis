@@ -85,6 +85,24 @@ describe("migrateDraftImages", () => {
       content: "![](pics/p.png)\n",
       migrated: false,
       failed: ["pics/p.png"],
+      mappings: [],
     });
+  });
+
+  it("lists each src it rewrote, as written before and after", async () => {
+    const encoded = "/Users/me/Application%20Support/assets/image-1-2-0.jpg";
+    migrate.mockResolvedValue([
+      { old: decodeURIComponent(encoded), new: "assets/image-1-2-0.jpg" },
+    ]);
+    const result = await migrateDraftImages(
+      "/B/b.md",
+      `![Art](${encoded})\n`,
+      "assets",
+      null,
+    );
+    expect(result.content).toBe("![Art](assets/image-1-2-0.jpg)\n");
+    expect(result.mappings).toEqual([
+      { old: encoded, new: "assets/image-1-2-0.jpg" },
+    ]);
   });
 });

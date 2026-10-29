@@ -8,6 +8,7 @@ import {
 import { isRecord, type Raw } from "./settings-sync";
 import { storedImageFolder } from "./image-folder";
 import { storedShortcuts } from "./shortcut-defaults";
+import { exclusiveAi } from "./levis-settings";
 import {
   COLOR_SWATCH_MODES,
   type ColorSwatchMode,
@@ -65,6 +66,8 @@ function readSettings(parsed: Raw | null): Settings {
     return {
       ...DEFAULT_SETTINGS,
       ...parsed,
+      // Levis: a blob with the Magic Diary on stands the other AI down.
+      ...exclusiveAi(parsed as Partial<Settings>),
       onboardingShown:
         typeof parsed.onboardingShown === "boolean"
           ? parsed.onboardingShown

@@ -1,11 +1,13 @@
 import { AI_NAME, APP_NAME } from "../names";
 import type { Plural } from "../plural";
+import { levisEn } from "./levis/en";
 
 /**
  * English, the source of truth: `Strings` is this object's shape, and other
  * languages fall back to it for what they haven't translated.
  */
 const en = {
+  ...levisEn,
   agentPanelTitle: AI_NAME,
   textusAiToggleLabel: `Enable ${AI_NAME}`,
   textusAiOffHint: "Off: nothing is sent to any AI service.",

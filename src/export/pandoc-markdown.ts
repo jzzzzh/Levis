@@ -2,12 +2,17 @@
 // syntax has no pandoc equivalent: highlights, sized images and GitHub
 // alerts with localized labels. Code is left untouched.
 
-import { parseImageTag } from "../editor/images/image-html";
+import {
+  parseImageTag,
+  readImagePresentation,
+} from "../editor/images/image-html";
 
 const FENCE = /^ {0,3}(`{3,}|~{3,})/;
 const IMG_TAG = /<img\b(?:[^<>"']|"[^"]*"|'[^']*')*>/gi;
+// The title's presentation suffix: a width and/or a rotation (which pandoc
+// has no attribute for, so it is dropped rather than printed as the title).
 const IMAGE_WIDTH =
-  /!\[([^\]]*)\]\((\S+?)\s+"([^"]*?)\s*\{textus-width=(\d{1,3})%\}"\)/g;
+  /!\[([^\]]*)\]\((\S+?)\s+"([^"]*?)\s*\{(?:\s*(?:textus|levis)-(?:width=(\d{1,3})%|rotate=\d{1,3}))+\s*\}"\)/g;
 const HIGHLIGHT = /==(?=\S)(.+?)(?<=\S)==/g;
 const ALERT = /^(\s*>\s*)\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*$/;
 
@@ -23,9 +28,8 @@ function imageTag(tag: string): string {
   if (!image) return tag;
   const alt = image.alt.replace(/([[\]\\])/g, "\\$1");
   const src = /[\s()<>]/.test(image.src) ? `<${image.src}>` : image.src;
-  const title = image.title
-    ? ` "${image.title.replace(/(["\\])/g, "\\$1")}"`
-    : "";
+  const shown = readImagePresentation(image.title).title;
+  const title = shown ? ` "${shown.replace(/(["\\])/g, "\\$1")}"` : "";
   const width = /^\d+$/.test(image.width) ? `${image.width}px` : image.width;
   return `![${alt}](${src}${title})${width ? `{width=${width}}` : ""}`;
 }
@@ -33,9 +37,10 @@ function imageTag(tag: string): string {
 function rewriteProse(text: string): string {
   return text
     .replace(IMG_TAG, imageTag)
-    .replace(IMAGE_WIDTH, (_m, alt: string, src: string, title: string, w) => {
+    .replace(IMAGE_WIDTH, (match, alt: string, src: string, title: string) => {
       const kept = title.trim() ? ` "${title.trim()}"` : "";
-      return `![${alt}](${src}${kept}){width=${w}%}`;
+      const w = /-width=(\d{1,3})%/.exec(match)?.[1];
+      return `![${alt}](${src}${kept})${w ? `{width=${w}%}` : ""}`;
     })
     .replace(HIGHLIGHT, "[$1]{.mark}");
 }

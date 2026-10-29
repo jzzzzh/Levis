@@ -118,6 +118,7 @@ import { copyTextPlugin } from "./clipboard/copy-text-plugin";
 import { pastePlainTextKeyPlugin } from "./clipboard/paste-plain";
 import { pictureCopyPlugin } from "./images/picture-clipboard";
 import { createImagePlugin } from "./images/image-plugin";
+import { imageCaptionPlugin } from "./images/image-caption";
 import {
   obsidianEmbedInputRule,
   obsidianEmbedSchema,
@@ -353,6 +354,7 @@ export function withEditorCore(
               onError: options.onImagePasteError,
             }),
       )
+      .use(imageCaptionPlugin)
       .use(linkInputRule)
       .use(linkRevealPlugin)
       .use(imageInputRule)

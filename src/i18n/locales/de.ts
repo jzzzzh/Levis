@@ -1,10 +1,12 @@
 import { AI_NAME, APP_NAME } from "../names";
 import type { Translation } from "../strings";
+import { levisDe } from "./levis/de";
 
 /** German. */
 export const complete = true;
 
 export default {
+  ...levisDe,
   agentPanelTitle: AI_NAME,
   textusAiToggleLabel: `${AI_NAME} aktivieren`,
   textusAiOffHint: "Aus: Es wird nichts an einen KI-Dienst gesendet.",

@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useRef } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef } from "react";
 import { renderDocumentHtml } from "../markdown/render-html";
 import { useKatexHtml } from "../math/useKatexHtml";
 import { resolveImageSrc } from "../images/image-plugin";
@@ -31,6 +31,10 @@ export function SplitView({
   // deferred value and catches up a beat later.
   const deferred = useDeferredValue(content);
   const html = useKatexHtml(deferred, renderDocumentHtml);
+  // A stable `__html` object: React 19 compares it by identity, so a new
+  // one per render rewrote the preview (and reloaded its images) on every
+  // keystroke, deferred or not.
+  const previewHtml = useMemo(() => ({ __html: html }), [html]);
   const { diagramEngine } = useSettings().settings;
 
   // Relative image paths resolve against the document's folder; Mermaid
@@ -132,7 +136,7 @@ export function SplitView({
             key={diagramEngine}
             id="write"
             className="ProseMirror split-preview-body"
-            dangerouslySetInnerHTML={{ __html: html }}
+            dangerouslySetInnerHTML={previewHtml}
           />
         </div>
       </div>

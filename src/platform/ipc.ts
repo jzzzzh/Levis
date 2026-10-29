@@ -5,6 +5,7 @@ import type { SentBlock } from "../ai/doc-blocks";
 import type { AgentTurn, ImageAttachment, ThinkingLevel } from "../ai/types";
 import type { GrammarIssue } from "../ai/writing/grammar-check-plugin";
 import type { AgentMode } from "../prefs/SettingsContext";
+import type { ImageTaskPermission } from "./ipc-levis";
 import type {
   CompletionRequest_Deserialize as CompletionRequest,
   GrammarRequest_Deserialize as GrammarRequest,
@@ -228,6 +229,8 @@ export const ai = {
     uiLanguage?: string;
     /** The image model, or null: generate_image is offered only with one. */
     imageModel?: ImageModel | null;
+    /** Levis: the task's image permission (media/jobs.rs). */
+    imageTask?: ImageTaskPermission | null;
     /** Live fragments while the request runs. */
     onEvent?: (event: StreamEvent) => void;
   }) => {

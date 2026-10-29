@@ -53,6 +53,9 @@ const FEATURES = [
   "settings",
   "sidebar",
   "theme",
+  // Levis features (docs/levis/README.md).
+  "media",
+  "voice",
 ];
 const SHELL = ["app", "document-view"];
 
@@ -61,6 +64,8 @@ export default tseslint.config(
     ignores: [
       "dist/**",
       "dist-playground/**",
+      "harness/node_modules/**",
+      "src-tauri/resources/**",
       "node_modules/**",
       "src-tauri/target/**",
       // The official plugins checked out for the plugin flows.
@@ -132,7 +137,7 @@ export default tseslint.config(
   },
   {
     files: [
-      "src/{ai,clipboard,document,export,mobile,onboarding,settings,sidebar,theme}/**/*.{ts,tsx}",
+      "src/{ai,clipboard,document,export,media,mobile,onboarding,settings,sidebar,theme,voice}/**/*.{ts,tsx}",
     ],
     ignores: ["**/*.test.*"],
     rules: above(SHELL),
@@ -184,6 +189,7 @@ export default tseslint.config(
       "vite.playground.config.ts",
       "eslint.config.js",
       "scripts/**/*.mjs",
+      "harness/**/*.mjs",
     ],
     languageOptions: {
       globals: globals.node,

@@ -23,6 +23,7 @@ import { hasWillSave, runWillSave } from "../plugins/contributions/will-save";
 import type { Strings } from "../i18n/strings";
 import type { TabState } from "./tabs/useTabState";
 import { errorText } from "../utils/error-text";
+import { levisSuggestedName, rewriteImagesInPlace } from "./levis/save-helpers";
 import { explainError } from "../utils/error-explain";
 
 /** Save and Save As for this window's tabs. Both resolve true only when the
@@ -77,12 +78,13 @@ export function useSaveTabs(opts: {
       const fromWord = tab.importedFrom
         ? wordSaveSuggestion(tab.importedFrom)
         : null;
+      const suggested = levisSuggestedName(tab);
       const defaultName = tab.path
         ? basename(tab.path)
         : (fromWord?.name ??
           defaultMarkdownFilename(
-            tab.content,
-            tab.helpDoc ? tabTitle(tab, t) : t.untitledTab,
+            suggested ? "" : tab.content,
+            suggested ?? (tab.helpDoc ? tabTitle(tab, t) : t.untitledTab),
             autoSuggestFilename,
           ));
       const picked = await fs.saveFileDialog(defaultName, fromWord?.dir);
@@ -97,6 +99,7 @@ export function useSaveTabs(opts: {
       // Pasted images in a first-saved draft move into its image folder with
       // relative paths; saved to another folder, relative images are copied.
       let { content } = tab;
+      let inPlace = false;
       try {
         const migration = await migrateDraftImages(
           picked,
@@ -107,6 +110,7 @@ export function useSaveTabs(opts: {
         if (migration.migrated) {
           content = migration.content;
           await writeDocFile(picked, content);
+          inPlace = rewriteImagesInPlace(tabId, picked, migration.mappings);
         }
         if (migration.failed.length > 0) {
           void showMessage(
@@ -127,7 +131,9 @@ export function useSaveTabs(opts: {
         savedContent: content,
         diskMtime: await statMtime(picked),
         // Image migration rewrote the markdown: the editor has to load it.
-        ...(content !== tab.content ? { reloadKey: tab.reloadKey + 1 } : {}),
+        ...(content !== tab.content && !inPlace
+          ? { reloadKey: tab.reloadKey + 1 }
+          : {}),
       });
       // Its past conversations follow it to the new name.
       if (tab.path) moveConversations(tab.path, picked);

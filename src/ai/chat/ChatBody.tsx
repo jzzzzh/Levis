@@ -80,6 +80,7 @@ export function ChatBody({
   quickReview,
   dockActions,
   selectionChip,
+  levis,
 }: ChatBodyProps) {
   // A selection that is one picture has no text, so the chip shows the
   // picture's description (or its Markdown) and says so.
@@ -173,6 +174,15 @@ export function ChatBody({
     options: AgentRequestOptions,
     typed: string = message,
   ) {
+    // Levis: the Agent workspace may run the send itself, refuse it for now
+    // or add to its options.
+    const prepared = levis?.prepareSend?.(message, options) ?? options;
+    if (prepared === "taken") return;
+    if (prepared === null) {
+      composer.current?.restore(typed);
+      return;
+    }
+    options = prepared;
     const compose = (state: {
       selectionMarkdown: string | null;
       cursor?: { before: string; after: string } | null;
@@ -510,6 +520,7 @@ export function ChatBody({
         onStop={stopAll}
         onEscape={onEscape ?? (() => {})}
         onModeChange={onModeChange}
+        levis={levis?.composer}
       />
       {footer}
     </>

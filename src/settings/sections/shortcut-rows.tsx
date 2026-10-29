@@ -75,6 +75,7 @@ function actionLabels(t: Strings): Record<ShortcutAction, string> {
     findReplace: plain(t.menuFindReplace),
     toggleSidebar: t.menuToggleSidebar,
     toggleAgentPanel: t.menuToggleAgentPanel,
+    toggleSurface: t.shortcutToggleSurface,
     toggleSplitView: t.menuToggleSplitView,
     toggleZenMode: t.menuToggleZenMode,
     splitEditor: t.shortcutSplitEditor,

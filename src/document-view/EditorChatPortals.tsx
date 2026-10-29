@@ -53,7 +53,11 @@ export function EditorChatPortals({
             selectedText={chat.panelSelection?.text ?? null}
             selectionIsPicture={chat.panelSelection?.picture ?? false}
             selectionChip={chat.panelChipHandlers}
-            panelSendContext={chat.bridge.panelSendContext}
+            panelSendContext={() => {
+              // Levis: a send from the docked panel isn't the Agent's draft.
+              chat.levisRouter.current?.panelSend();
+              return chat.bridge.panelSendContext();
+            }}
             showProposals={chat.proposals.showProposals}
             onRevealProposal={review.revealProposal}
             onLocateText={notes.locateText}

@@ -3,6 +3,7 @@ import type { ChatAttachment, ThinkingLevel } from "../types";
 import { resolveStrings } from "../../i18n/strings";
 import { pickerLabels, type PickerLabels } from "./ComposerPicker";
 import type { AgentMode } from "../../prefs/SettingsContext";
+import type { LevisComposerSlots } from "./levis-chat";
 
 // What ChatComposer is given, apart from the component so the hooks and
 // windows that only pass these along needn't import it.
@@ -156,4 +157,6 @@ export interface ChatComposerProps {
   onEscape: () => void;
   /** The mode as it is now, on the first render and on every switch. */
   onModeChange?: (mode: AgentMode) => void;
+  /** Levis: the host's toolbar tools and dictation (levis-chat.tsx). */
+  levis?: LevisComposerSlots;
 }

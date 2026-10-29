@@ -44,6 +44,7 @@ export function ShortcutsPage({
             [
               ["toggleSidebar", t.menuToggleSidebar],
               ["toggleAgentPanel", t.menuToggleAgentPanel],
+              ["toggleSurface", t.shortcutToggleSurface],
               ["toggleSplitView", t.menuToggleSplitView],
               ["toggleSourceMode", t.menuViewSource],
               ["toggleTypewriterMode", t.menuViewTypewriter],

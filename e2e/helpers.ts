@@ -79,11 +79,12 @@ export async function openApp(
     settings?: Record<string, unknown>;
     colorScheme?: "light" | "dark";
     animations?: boolean;
+    home?: boolean;
   } = {},
 ) {
   await page.emulateMedia({ colorScheme: options.colorScheme ?? "light" });
   await page.addInitScript(
-    ({ settings, storage }) => {
+    ({ settings, storage, home }) => {
       // Not in the iframe an imported theme is sampled in: rewriting the settings
       // there fires a storage event that reverts the import.
       if (window.top !== window) return;
@@ -93,6 +94,8 @@ export async function openApp(
           language: "zh",
           languageChosen: true,
           onboardingShown: true,
+          // Levis: the Agent's own specs start on its home.
+          ...(home ? { defaultHome: "agent" } : {}),
           ...settings,
         }),
       );
@@ -100,7 +103,11 @@ export async function openApp(
         localStorage.setItem(key, value);
       }
     },
-    { settings: options.settings ?? {}, storage: options.storage ?? {} },
+    {
+      settings: options.settings ?? {},
+      storage: options.storage ?? {},
+      home: options.home ?? false,
+    },
   );
   await page.goto("/");
   if (!options.animations)
@@ -108,7 +115,9 @@ export async function openApp(
       content:
         "*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }",
     });
-  await page.waitForSelector('[data-active-tab="true"] .ProseMirror');
+  await page.waitForSelector('[data-active-tab="true"] .ProseMirror', {
+    state: "attached",
+  });
 }
 
 /** Puts markdown into the active editor the way a paste does. */
@@ -187,3 +196,12 @@ export async function openPhone(
     "mobile",
   );
 }
+
+/** The key that moves the caret to the end of its line. Chromium on macOS
+ *  follows the Mac text system there: End only scrolls, Cmd+Right moves. */
+export const LINE_END =
+  process.platform === "darwin" ? "Meta+ArrowRight" : "End";
+
+/** LINE_END's counterpart: the start of the caret's line. */
+export const LINE_START =
+  process.platform === "darwin" ? "Meta+ArrowLeft" : "Home";

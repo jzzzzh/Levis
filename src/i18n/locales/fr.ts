@@ -1,5 +1,6 @@
 import { AI_NAME, APP_NAME } from "../names";
 import type { Translation } from "../strings";
+import { levisFr } from "./levis/fr";
 
 /** French. The no-break spaces French typography asks for are written as
  *  escapes so they stay visible: \u00a0 before a colon and inside « »,
@@ -7,6 +8,7 @@ import type { Translation } from "../strings";
 export const complete = true;
 
 export default {
+  ...levisFr,
   agentPanelTitle: AI_NAME,
   textusAiToggleLabel: `Activer ${AI_NAME}`,
   textusAiOffHint: "Désactivée : rien n'est envoyé à aucun service d'IA.",

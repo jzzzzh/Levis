@@ -9,6 +9,7 @@ import type { ChatComposerLabels, SelectionChipHandlers } from "./ChatComposer";
 import type { QuickAskPendingBarLabels } from "./quick-ask/QuickAskPendingBar";
 import { isProposalTool, parseToolProposal } from "./proposal";
 import { refusedProposalIds } from "../revision/proposal-status";
+import type { LevisChatHooks } from "./levis-chat";
 
 /** What the chat body is given, and what it reads from the turns. */
 
@@ -104,6 +105,8 @@ export interface ChatBodyProps {
    *  the composer's top row. */
   dockActions?: React.ReactNode;
   selectionChip?: SelectionChipHandlers;
+  /** Levis: the Agent workspace's hooks into sending (levis-chat.tsx). */
+  levis?: LevisChatHooks;
 }
 
 /** The Quick Ask nav bar's whole contract. */

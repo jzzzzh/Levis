@@ -13,6 +13,7 @@ export type ShortcutAction =
   | "toggleTextusAi"
   | "toggleSidebar"
   | "toggleAgentPanel"
+  | "toggleSurface"
   | "toggleSplitView"
   | "toggleZenMode"
   | "splitEditor"
@@ -50,6 +51,7 @@ export function defaultShortcuts(mac = modIsMeta()): Shortcuts {
     toggleTextusAi: "",
     toggleSidebar: "mod+\\",
     toggleAgentPanel: "mod+shift+l",
+    toggleSurface: "mod+shift+a",
     toggleSplitView: "mod+shift+e",
     toggleZenMode: "mod+shift+j",
     splitEditor: "mod+alt+s",

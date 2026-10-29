@@ -107,7 +107,7 @@ test.describe("desktop", () => {
   }) => {
     await openApp(page, { settings: { language: "en" } });
     const panel = await openSettings(page);
-    // Six categories, plugins among them.
+    // Six categories, plugins among them (and Levis' own).
     await expect(panel.locator(".settings-nav-item")).toHaveText([
       t.navGeneral,
       t.navEditor,
@@ -115,6 +115,7 @@ test.describe("desktop", () => {
       t.navExtensions,
       t.navShortcuts,
       t.navPrivacy,
+      "Levis",
     ]);
     await panel.getByRole("button", { name: t.navAi, exact: true }).click();
 
@@ -510,7 +511,7 @@ test.describe("desktop", () => {
     await openSettings(page);
     const panel = page.locator(".settings-panel");
     const items = panel.locator(".settings-nav-item");
-    await expect(items).toHaveCount(6);
+    await expect(items).toHaveCount(7); // Levis' page included
     const widths = new Set<number>();
     for (const item of await items.all()) {
       await item.click();

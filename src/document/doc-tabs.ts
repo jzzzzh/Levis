@@ -5,6 +5,7 @@ import { lazyModule } from "../lazy/lazy-module";
 import { fs } from "../platform/ipc";
 import { detectFormat, toEditorText, toFileText } from "./file-format";
 import type { PluginTabView } from "../plugins/app-bridge";
+import { levisTabTitle } from "./levis-tabs";
 
 // Every bundled guide, by file name. A language without its own copy gets
 // the English one.
@@ -28,6 +29,9 @@ export type HelpDoc = "markdown" | "agent";
 
 export interface DocTab {
   id: string;
+  /** Levis: keeps the workspace identity when a recovered tab receives a
+   *  new UI id. */
+  workspaceId?: string;
   path: string | null;
   content: string;
   // What's on disk ("" for a fresh draft); dirtiness is divergence from it.
@@ -59,6 +63,7 @@ export interface DocTab {
 
 // The document part of a tab in flight between windows.
 export interface DetachedTabDoc {
+  workspaceId?: string;
   path: string | null;
   content: string;
   savedContent: string;
@@ -87,6 +92,8 @@ export function tabTitle(tab: DocTab, t: Strings): string {
   if (tab.helpDoc === "agent") return t.agentGuideTab;
   if (tab.importedFrom)
     return basename(tab.importedFrom).replace(/\.docx$/i, "");
+  const levisTitle = levisTabTitle(tab);
+  if (levisTitle) return levisTitle;
   if (tab.draftTitle) return tab.draftTitle;
   return t.untitledTab;
 }
@@ -147,6 +154,7 @@ export function floatingDragArgs(
 ) {
   return {
     tab: {
+      workspaceId: tab.workspaceId ?? tab.id,
       path: tab.path,
       content: tab.content,
       savedContent: tab.savedContent,

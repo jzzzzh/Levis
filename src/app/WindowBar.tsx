@@ -84,6 +84,8 @@ export function WindowBar({
           </button>
         </Tooltip>
       )}
+      {/* Levis: the active document's Agent | Write switch (LevisWorkspace). */}
+      <span className="window-bar-start" />
       {/* The unsaved dot leads the title, as a native edited title does. */}
       <span className="window-bar-title">
         {dirty && (
@@ -119,6 +121,8 @@ export function WindowBar({
         <span className="word-count">
           {words > 0 && `${words} ${words === 1 ? t.wordUnit : t.wordsUnit}`}
         </span>
+        {/* Levis: read-aloud on the Write surface (LevisWorkspace). */}
+        <span className="window-bar-end" />
         {/* Struck through while Textus AI is off; right-click pauses or
           turns it off. */}
         <TextusAiButton

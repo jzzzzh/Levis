@@ -100,6 +100,9 @@ const ADAPTERS = [
   /^src-tauri\/crates\/aicompat\/src\/(providers|images)\//,
   /^src-tauri\/crates\/aicompat\/src\/capabilities/,
   /^src-tauri\/src\/ai\/catalog/,
+  // Levis: the media providers' adapter.
+  /^src-tauri\/src\/media\/protocols/,
+  /^src\/media\/provider-catalog/,
 ];
 for (const path of sources) {
   if (ADAPTERS.some((re) => re.test(path))) continue;

@@ -1,10 +1,12 @@
 import { AI_NAME, APP_NAME } from "../names";
 import type { Translation } from "../strings";
+import { levisZhHant } from "./levis/zh-Hant";
 
 /** Traditional Chinese, as written in Taiwan. */
 export const complete = true;
 
 export default {
+  ...levisZhHant,
   agentPanelTitle: AI_NAME,
   textusAiToggleLabel: `啟用 ${AI_NAME}`,
   textusAiOffHint: "已關閉：不會向任何 AI 服務傳送內容。",

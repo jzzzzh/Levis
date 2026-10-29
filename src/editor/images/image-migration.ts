@@ -59,6 +59,15 @@ function rewriteImageSrcs(content: string, moved: Map<string, string>): string {
   );
 }
 
+export interface MigratedImages {
+  content: string;
+  migrated: boolean;
+  failed: string[];
+  /** Each src rewritten, as written before and after: what else refers to
+   *  the picture (a generated image's job) follows it. */
+  mappings: { old: string; new: string }[];
+}
+
 /**
  * Brings a document's images along when it is saved to a file: a draft's
  * pasted images (absolute, in the app's data dir) move into the image
@@ -70,9 +79,10 @@ export async function migrateDraftImages(
   content: string,
   folder: string,
   sourceDocPath: string | null = null,
-): Promise<{ content: string; migrated: boolean; failed: string[] }> {
+): Promise<MigratedImages> {
   const candidates = extractImageSrcs(content, sourceDocPath !== null);
-  if (candidates.size === 0) return { content, migrated: false, failed: [] };
+  if (candidates.size === 0)
+    return { content, migrated: false, failed: [], mappings: [] };
 
   const written = new Map(
     [...candidates].map(([src, path]) => [path, src] as const),
@@ -94,5 +104,6 @@ export async function migrateDraftImages(
     content: moved.size > 0 ? rewriteImageSrcs(content, moved) : content,
     migrated: moved.size > 0,
     failed,
+    mappings: [...moved].map(([old, next]) => ({ old, new: next })),
   };
 }

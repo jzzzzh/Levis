@@ -1,0 +1,70 @@
+/* Read aloud: an icon in the window bar beside the chat toggle, the same
+   size; while reading it grows a counter and a stop button. */
+.write-playback {
+  position: relative;
+  display: inline-flex;
+  pointer-events: auto;
+  color: inherit;
+}
+.write-playback-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.write-playback button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: inherit;
+  background: transparent;
+  opacity: 0.7;
+  cursor: pointer;
+  transition:
+    opacity var(--dur-fast) var(--ease-standard),
+    background-color var(--dur-fast) var(--ease-standard);
+}
+.write-playback button:hover {
+  opacity: 1;
+  background: var(--sidebar-hover, #8882);
+}
+.write-playback button svg {
+  width: 14px;
+  height: 14px;
+}
+.write-playback button:focus-visible {
+  outline: 2px solid var(--accent, #5988bc);
+  outline-offset: 1px;
+}
+.write-playback button:disabled {
+  opacity: 0.4;
+  cursor: wait;
+}
+.write-playback-progress {
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  opacity: 0.6;
+  animation: motion-fade-in var(--dur-fast) var(--ease-out);
+}
+.write-playback-error {
+  position: absolute;
+  top: 26px;
+  right: 0;
+  z-index: var(--z-popover);
+  display: flex;
+  gap: var(--space-2);
+  width: min(280px, 80vw);
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--editor-border, #8883);
+  border-radius: var(--radius-surface);
+  background: var(--sidebar-bg);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  box-shadow: var(--shadow-popover);
+  animation: motion-rise-in var(--dur-base) var(--ease-out);
+}

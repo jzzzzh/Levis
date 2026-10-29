@@ -6,6 +6,7 @@ import { pluginDecorations } from "./plugins/plugin-decorations";
 import type { ReviewNote } from "../ai/margin/review-notes-plugin";
 import type { Settings } from "../prefs/SettingsContext";
 import type { TourAi } from "../utils/events";
+import { withLevisPlugins } from "./levis/levis-plugins";
 
 export type { PendingEditCallbacks };
 
@@ -35,7 +36,7 @@ export function withEditorExtensions(
     onBadge: (id: string, el: HTMLElement) => void;
   } = { onChange: () => {}, onBadge: () => {} },
 ): Editor {
-  return withAiPlugins(
+  const upstream = withAiPlugins(
     withEditorCore(editor, {
       settings,
       docPath,
@@ -46,4 +47,5 @@ export function withEditorExtensions(
   )
     .use(pluginCodeBlocks(docPath))
     .use(pluginDecorations);
+  return withLevisPlugins(upstream, settings, tour);
 }

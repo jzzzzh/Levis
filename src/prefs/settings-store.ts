@@ -7,6 +7,7 @@ import { listenToThisWindow } from "../platform/events";
 import { SettingsSync, isRecord, type Raw } from "./settings-sync";
 import type { Settings } from "./settings-types";
 import { normaliseSettings } from "./settings-normalise";
+import { exclusiveAi } from "./levis-settings";
 
 /** Where the settings live: the shared settings file, a local copy for a
  *  fast start, and changes to and from other windows. */
@@ -77,7 +78,7 @@ export function fileStore(): SettingsSync | null {
 /** Adopts a full snapshot from Rust, keeping this window's zoom. */
 export function adopt(value: Raw, rev: number) {
   if (!sync) return;
-  const next = { ...value };
+  const next = { ...value, ...exclusiveAi(value) };
   if (sync.raw.zoom !== undefined) next.zoom = sync.raw.zoom;
   if (sync.snapshot(next, rev)) notifyRemote();
 }

@@ -1,0 +1,156 @@
+import { useEffect, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
+import { DictationIcon } from "./InlineDictation";
+import { DictationRange } from "./dictation-range";
+import {
+  captureDictationTarget,
+  hasDictationTarget,
+  type DictationTargetSession,
+} from "./dictation-target";
+import { useDictationCapture } from "./useDictationCapture";
+import "./global-dictation.css";
+
+export function captureTextInput(
+  element: HTMLInputElement | HTMLTextAreaElement,
+): DictationTargetSession {
+  const range = new DictationRange(
+    element.value,
+    element.selectionStart ?? element.value.length,
+    element.selectionEnd ?? element.value.length,
+  );
+  let finished = false;
+  return {
+    apply(text) {
+      if (finished || !element.isConnected) return false;
+      const next = range.update(element.value, text);
+      if (next === null) return false;
+      const prototype =
+        element instanceof HTMLTextAreaElement
+          ? HTMLTextAreaElement.prototype
+          : HTMLInputElement.prototype;
+      Object.getOwnPropertyDescriptor(prototype, "value")?.set?.call(
+        element,
+        next,
+      );
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+      return true;
+    },
+    finish() {
+      finished = true;
+    },
+  };
+}
+function eligible(element: HTMLElement) {
+  if (
+    element.closest(
+      ".inline-chat-input, .inline-dictation, .global-dictation, [data-no-dictation]",
+    )
+  )
+    return false;
+  if (hasDictationTarget(element)) return true;
+  if (element instanceof HTMLTextAreaElement)
+    return !element.disabled && !element.readOnly;
+  return (
+    element instanceof HTMLInputElement &&
+    ["text", "search"].includes(element.type) &&
+    !element.disabled &&
+    !element.readOnly
+  );
+}
+export function GlobalDictation({ language }: { language: string }) {
+  const [target, setTarget] = useState<HTMLElement | null>(null);
+  const [position, setPosition] = useState<CSSProperties>({
+    top: 0,
+    left: 0,
+  });
+  const voice = useDictationCapture(!!target, language, () =>
+    target
+      ? (captureDictationTarget(target) ??
+        (target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement
+          ? captureTextInput(target)
+          : null))
+      : null,
+  );
+  const cancel = voice.cancel;
+  useEffect(() => {
+    const focus = (event: FocusEvent) => {
+      const element = event.target as HTMLElement;
+      if (element.closest(".global-dictation")) return;
+      cancel();
+      setTarget(eligible(element) ? element : null);
+    };
+    document.addEventListener("focusin", focus);
+    return () => document.removeEventListener("focusin", focus);
+  }, [cancel]);
+  useEffect(() => {
+    if (!target) return;
+    const update = () => {
+      if (!target.isConnected || !target.getClientRects().length) {
+        cancel();
+        setTarget(null);
+        return;
+      }
+      // The document's microphone rests in the window's corner, clear of
+      // the text; a small field's sits at that field's corner.
+      if (hasDictationTarget(target)) {
+        setPosition({ right: 20, bottom: 20 });
+        return;
+      }
+      const rect = target.getBoundingClientRect();
+      setPosition({
+        top: Math.min(window.innerHeight - 44, Math.max(8, rect.bottom - 38)),
+        left: Math.min(window.innerWidth - 44, Math.max(8, rect.right - 38)),
+      });
+    };
+    update();
+    // Every scroll in the app reaches this capture listener: measure at
+    // most once per frame.
+    let frame = 0;
+    const schedule = () => {
+      if (!frame)
+        frame = requestAnimationFrame(() => {
+          frame = 0;
+          update();
+        });
+    };
+    window.addEventListener("scroll", schedule, true);
+    window.addEventListener("resize", schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule, true);
+      window.removeEventListener("resize", schedule);
+    };
+  }, [target, cancel]);
+  if (!target) return null;
+  const zh = language.startsWith("zh");
+  return createPortal(
+    <div
+      className={`global-dictation inline-dictation${hasDictationTarget(target) ? " is-docked" : ""}`}
+      style={position}
+    >
+      <button
+        type="button"
+        className={voice.listening ? "dictation-listening" : ""}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={voice.toggle}
+        aria-label={
+          voice.listening
+            ? zh
+              ? "停止听写"
+              : "Stop dictation"
+            : zh
+              ? "语音输入"
+              : "Voice input"
+        }
+        title={
+          zh ? "语音输入 · 停顿后自动结束" : "Dictate · stops after silence"
+        }
+      >
+        <DictationIcon />
+      </button>
+      {voice.error && <span role="alert">{voice.error}</span>}
+    </div>,
+    document.body,
+  );
+}

@@ -10,6 +10,8 @@ import { usePhoneLayout } from "../ui/usePhoneLayout";
 import { useSettings, type AgentMode } from "../prefs/SettingsContext";
 import type { TourAi } from "../utils/events";
 import { Milkdown } from "@milkdown/react";
+import { LevisWorkspace } from "./levis/LevisWorkspace";
+import { reportingChanges } from "./levis/doc-changes";
 import "@milkdown/kit/prose/view/style/prosemirror.css";
 import "../theme/content-base.css";
 import "../editor/milkdown-theme.css";
@@ -60,7 +62,7 @@ export function MilkdownEditor({
     tabId,
     docTitle,
     initialValue,
-    onChange,
+    onChange: reportingChanges(tabId, onChange),
     tour,
     readOnly,
     ...context,
@@ -130,6 +132,18 @@ export function MilkdownEditor({
         tourMode={tourMode ?? askedMode}
         settings={settings}
         t={t}
+      />
+      <LevisWorkspace
+        setup={setup}
+        chat={chat}
+        review={review}
+        tabId={tabId}
+        filePath={filePath}
+        docTitle={docTitle}
+        initialValue={initialValue}
+        isActive={isActive}
+        phone={phone}
+        tour={tour}
       />
     </div>
   );

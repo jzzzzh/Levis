@@ -25,6 +25,7 @@ import {
 import { closeSplit, splitEditor, splitLayout } from "./split/split-layout";
 import { openCommandPalette } from "./command-palette-entry";
 import { isImeKeydown } from "../utils/ime";
+import { TOGGLE_SURFACE_EVENT } from "../document/levis-tabs";
 
 /** The heading shortcuts, by the block kind they apply. */
 const HEADING_KINDS: [HeadingAction, string][] = [
@@ -204,6 +205,10 @@ export function useGlobalShortcuts(opts: {
       } else if (combo === shortcuts.toggleAgentPanel) {
         e.preventDefault();
         toggleAgentPanel();
+      } else if (combo === shortcuts.toggleSurface) {
+        // Levis: the active document's editor switches Agent / Write.
+        e.preventDefault();
+        window.dispatchEvent(new Event(TOGGLE_SURFACE_EVENT));
       } else if (combo === shortcuts.toggleSplitView) {
         e.preventDefault();
         toggleSplitView();

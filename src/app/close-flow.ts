@@ -23,6 +23,7 @@ function tellKept(path: string, t: Strings) {
         .replace("{n}", String(n)),
     );
 }
+import { confirmWorkspaceClose } from "../document/workspace-close";
 
 // What the save/discard/cancel prompt is guarding: a tab or the whole window.
 export type PendingClose = { kind: "tab"; tabId: string } | { kind: "window" };
@@ -90,6 +91,7 @@ export function useTabRemoval(opts: {
       const tab = liveTabs().find((tb) => tb.id === id);
       if (tab?.path) closedPaths.push(tab.path);
       if (!tab || !tabIsDirty(tab)) {
+        if (!(await confirmWorkspaceClose([id]))) return;
         removeTab(id);
         if (tab?.path) tellKept(tab.path, t);
         return;
@@ -129,6 +131,11 @@ export function useWindowCloseGuard(
         setPendingClose({ kind: "window" });
         return;
       }
+      // Levis: the Agent work in this window, once the close goes ahead.
+      if (!(await confirmWorkspaceClose(liveTabs().map((tab) => tab.id)))) {
+        event.preventDefault();
+        return;
+      }
       await flushPendingWrites();
     });
     return unlistenAll(unlisten);
@@ -165,10 +172,25 @@ export function useClosePrompt(opts: {
     );
   }, [cancelDraftFlushes, tabsRef]);
 
+  /** Levis: the Agent work in what is closing, asked after the save
+   *  prompt, so Cancel there leaves it running. */
+  const workspaceAllows = useCallback(
+    async (action: PendingClose) => {
+      const ids =
+        action.kind === "window"
+          ? liveTabs().map((tab) => tab.id)
+          : [action.tabId];
+      if (await confirmWorkspaceClose(ids)) return true;
+      if (action.kind === "window") await session.cancelQuit();
+      return false;
+    },
+    [liveTabs],
+  );
+
   const closeSaving = useCallback(async () => {
     const action = pendingClose;
     setPendingClose(null);
-    if (!action) return;
+    if (!action || !(await workspaceAllows(action))) return;
     if (action.kind === "window") {
       // A cancelled Save As leaves the window open.
       for (const tab of liveTabs()) {
@@ -193,18 +215,25 @@ export function useClosePrompt(opts: {
     removeTab,
     clearWindowDrafts,
     liveTabs,
+    workspaceAllows,
   ]);
 
   const closeDiscarding = useCallback(async () => {
     const action = pendingClose;
     setPendingClose(null);
-    if (!action) return;
+    if (!action || !(await workspaceAllows(action))) return;
     if (action.kind === "window") {
       await clearWindowDrafts();
       await flushPendingWrites();
       await thisWindow().destroy();
     } else removeTab(action.tabId);
-  }, [pendingClose, setPendingClose, removeTab, clearWindowDrafts]);
+  }, [
+    pendingClose,
+    setPendingClose,
+    removeTab,
+    clearWindowDrafts,
+    workspaceAllows,
+  ]);
 
   const cancelClose = () => {
     setPendingClose(null);

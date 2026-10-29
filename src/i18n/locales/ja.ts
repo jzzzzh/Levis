@@ -1,10 +1,12 @@
 import { AI_NAME, APP_NAME } from "../names";
 import type { Translation } from "../strings";
+import { levisJa } from "./levis/ja";
 
 /** Japanese. */
 export const complete = true;
 
 export default {
+  ...levisJa,
   agentPanelTitle: AI_NAME,
   textusAiToggleLabel: `${AI_NAME} を有効にする`,
   textusAiOffHint: "オフの間は、どの AI サービスにも何も送信しません。",

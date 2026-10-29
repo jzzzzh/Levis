@@ -26,6 +26,7 @@ import {
   skillOfferTurns,
 } from "./memory-pass";
 import { useNextMessage } from "./next-message";
+import type { ImageTaskPermission } from "../../platform/ipc-levis";
 
 export interface AgentRequestOptions {
   mode: AgentMode;
@@ -33,6 +34,8 @@ export interface AgentRequestOptions {
   /** Left out: the provider's default (Auto). */
   thinking?: ThinkingLevel;
   focusHeading?: string | null;
+  /** Levis: what the Agent's images may do in this task (media/jobs.rs). */
+  imageTask?: ImageTaskPermission | null;
 }
 
 /** What has streamed in so far for the in-flight exchange: landed turns plus
@@ -221,6 +224,7 @@ export function useAgentConversation(
         uiLanguage: uiLanguage.current,
         model: model || null,
         imageModel: imageModel.current,
+        imageTask: options.imageTask ?? null,
         requestId,
         onEvent: (event) => {
           if (generation !== generationRef.current) return;

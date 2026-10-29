@@ -1,10 +1,12 @@
 import { AI_NAME, APP_NAME } from "../names";
 import type { Translation } from "../strings";
+import { levisKo } from "./levis/ko";
 
 /** Korean. */
 export const complete = true;
 
 export default {
+  ...levisKo,
   agentPanelTitle: AI_NAME,
   textusAiToggleLabel: `${AI_NAME} 사용`,
   textusAiOffHint:

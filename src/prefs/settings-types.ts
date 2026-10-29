@@ -3,6 +3,7 @@ import type { McpServer } from "./mcp";
 import type { UpdateChannel } from "../platform/update-channel";
 import { DEFAULT_IMAGE_SUBFOLDER } from "./image-folder";
 import { DEFAULT_SHORTCUTS, type Shortcuts } from "./shortcut-defaults";
+import { LEVIS_DEFAULTS, type LevisSettings } from "./levis-settings";
 
 /** Every setting's type and choices, and the defaults a new install starts from. */
 
@@ -118,7 +119,7 @@ export function storedAgentMode(value: unknown): AgentMode | null {
   return AGENT_MODES.includes(value as AgentMode) ? (value as AgentMode) : null;
 }
 
-export interface Settings {
+export interface Settings extends LevisSettings {
   language: Lang;
   /** False until the language welcome screen is confirmed. */
   languageChosen: boolean;
@@ -296,6 +297,7 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
+  ...LEVIS_DEFAULTS,
   language: "en",
   languageChosen: false,
   theme: "system",

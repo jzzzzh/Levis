@@ -1,10 +1,12 @@
 import { AI_NAME, APP_NAME } from "../names";
 import type { Translation } from "../strings";
+import { levisEs } from "./levis/es";
 
 /** Spanish: neutral, for Spain and Latin America alike. */
 export const complete = true;
 
 export default {
+  ...levisEs,
   agentPanelTitle: AI_NAME,
   textusAiToggleLabel: `Activar ${AI_NAME}`,
   textusAiOffHint: "Desactivada: no se envía nada a ningún servicio de IA.",

@@ -11,6 +11,7 @@ import { useAgentPanel } from "../ai/chat/panel/agent-panel";
 import { useRevisionLearning } from "../ai/revision/RevisionLearning";
 import type { Settings } from "../prefs/SettingsContext";
 import type { Strings } from "../i18n/strings";
+import type { ProposalRouter } from "./levis-proposal-router";
 
 /**
  * One tab's editor and Textus AI's chats: their proposals, what each chat
@@ -38,6 +39,8 @@ export function useEditorChat({
     docPath: filePath,
     workspaceRoot: settings.agentWorkspaceRoot || null,
   });
+  // Levis: the Agent workspace's claim on proposals (useLevisWorkspace).
+  const levisRouter = useRef<ProposalRouter | null>(null);
   const proposals = useEditorProposals({
     run,
     pendingEditActionsRef: setup.pendingEditActionsRef,
@@ -47,6 +50,7 @@ export function useEditorChat({
     isActive,
     onDecided: learning.record,
     requestImageName: setup.imageName.requestImageName,
+    levisRouter,
   });
   const { pendingEdits, conversation, quickConversation } = proposals;
   const windowChipRef = useRef<SelectionChipHandlers | null>(null);
@@ -175,6 +179,7 @@ export function useEditorChat({
     setPanelGuard,
     startPanelConversation,
     popOutPanel,
+    levisRouter,
   };
 }
 

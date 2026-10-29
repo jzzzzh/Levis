@@ -28,6 +28,8 @@ import { lastCaret } from "../document/last-carets";
 import { lastViewMode } from "../editor/modes/view-mode";
 import { isIOSApp } from "../platform/capabilities";
 import { isWindowsPlatform } from "../platform/os";
+import { confirmWorkspaceClose } from "../document/workspace-close";
+import { tabIsEngaged } from "../document/levis-tabs";
 import { dropPointInPage, sortDroppedPaths } from "./dropped-files";
 import { isWordDocument, wordDocumentTab } from "../document/word-import";
 import { showMessage } from "../ui/app-dialog";
@@ -245,6 +247,8 @@ export function useFileOpening(opts: {
     async (tabId: string, path: string, open: OpenOptions = {}) => {
       const doc = await readDocument(path, open.asDocument);
       if (!doc) return;
+      // Levis: the editor's Agent work is resolved before it remounts.
+      if (!(await confirmWorkspaceClose([tabId]))) return;
       // Taken by the editor the new reloadKey mounts.
       const jump =
         doc.path &&
@@ -252,7 +256,7 @@ export function useFileOpening(opts: {
       if (jump) setTabJump(tabId, jump);
       const reloadKey =
         (tabsRef.current.find((tb) => tb.id === tabId)?.reloadKey ?? 0) + 1;
-      updateTab(tabId, { ...doc, reloadKey });
+      updateTab(tabId, { ...doc, reloadKey, workspaceId: crypto.randomUUID() });
     },
     [tabsRef, updateTab, restoreCarets, readDocument],
   );
@@ -272,6 +276,7 @@ export function useFileOpening(opts: {
       if (
         front &&
         tabIsUntouchedDraft(front) &&
+        !tabIsEngaged(front.id) &&
         !alreadyOpen &&
         !open.where &&
         !open.drop

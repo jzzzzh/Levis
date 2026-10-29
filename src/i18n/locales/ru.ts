@@ -1,10 +1,12 @@
 import { AI_NAME, APP_NAME } from "../names";
 import type { Translation } from "../strings";
+import { levisRu } from "./levis/ru";
 
 /** Russian. */
 export const complete = true;
 
 export default {
+  ...levisRu,
   agentPanelTitle: AI_NAME,
   textusAiToggleLabel: `Включить ${AI_NAME}`,
   textusAiOffHint: "Выключен: ничего не отправляется ни в один сервис ИИ.",

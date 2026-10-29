@@ -16,6 +16,7 @@ import { lastCaret } from "./last-carets";
 import { isWordDocument } from "./word-import";
 import { loadPlugins } from "../plugins/manager";
 import { customEditorFor } from "../plugins/store/plugin-lookup";
+import { withWorkspaceRecoveries } from "./levis-recovery";
 
 /** Whether a plugin opens `path` in a tab of its own (a PDF). */
 async function opensInPlugin(path: string): Promise<boolean> {
@@ -89,15 +90,19 @@ export function useStartupRestore(options: StartupRestoreOptions): void {
       }
       // Recovered drafts from a crash or forced quit, added as extra tabs
       // without stealing focus. Skipped while the privacy toggle is off.
-      const draftSnapshots = opts.enableDraftRecovery
-        ? ((await drafts.takeDraftSnapshots()) ?? [])
-        : [];
+      const draftSnapshots = await withWorkspaceRecoveries(
+        opts.enableDraftRecovery
+          ? ((await drafts.takeDraftSnapshots()) ?? [])
+          : [],
+        opts.enableDraftRecovery,
+      );
       const restored: DocTab[] = [];
       if (draftSnapshots.length > 0) {
         for (const draft of draftSnapshots) {
           if (!draft.path) {
             restored.push({
               ...makeBlankTab(),
+              workspaceId: draft.workspaceId,
               content: draft.content,
               savedContent: "",
             });
@@ -107,11 +112,12 @@ export function useStartupRestore(options: StartupRestoreOptions): void {
             const { content: diskContent, diskMtime } = await readDocFromDisk(
               draft.path,
             );
-            if (diskContent === draft.content) continue; // disk already matches - nothing to recover
+            if (diskContent === draft.content && !draft.workspaceId) continue; // disk already matches - nothing to recover
             restored.push({
               ...makeBlankTab(),
+              workspaceId: draft.workspaceId,
               path: draft.path,
-              content: draft.content,
+              content: draft.workspaceOnly ? diskContent : draft.content,
               savedContent: diskContent,
               diskMtime,
             });
@@ -152,6 +158,7 @@ export function useStartupRestore(options: StartupRestoreOptions): void {
       const loadRecoveredIntoInitialTab = (recovered: DocTab) => {
         loadIntoInitialTab({
           path: recovered.path,
+          workspaceId: recovered.workspaceId,
           content: recovered.content,
           savedContent: recovered.savedContent,
           diskMtime: recovered.diskMtime,

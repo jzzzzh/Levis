@@ -16,6 +16,7 @@ import "../AgentTurnView.css";
 import "../inline-chat.css";
 import { TextusAiOffNote } from "../../TextusAiSwitch";
 import "./chat-window.css";
+import { GlobalDictation } from "../../../voice/GlobalDictation";
 
 /**
  * The chat as its own OS window: the cross-file surface, following the user's
@@ -84,6 +85,7 @@ export function ChatWindowApp() {
   return (
     <div className="chat-window">
       {header}
+      <GlobalDictation language={settings.language} />
       <div className="chat-window-body">
         <ChatBody
           document={context.document}

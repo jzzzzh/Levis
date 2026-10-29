@@ -1,0 +1,57 @@
+/* What image-toolbar.ts and image-caption.ts add to a picture in the
+   editor: its caption, its quarter turn, its fade in and its toolbar. */
+
+/* A picture's caption (*Caption* right under it): centred under the
+   picture, smaller and quieter than the text. */
+.milkdown p.image-caption {
+  margin: calc(var(--md-gap-box) * -0.5) auto var(--md-gap-box);
+  max-width: 36em;
+  text-align: center;
+  font-size: 0.88em;
+  line-height: 1.5;
+  color: var(--editor-muted);
+}
+.milkdown p.image-caption em {
+  font-style: normal;
+}
+
+/* Rotation ({textus-rotate=D} in the title). A half turn keeps the
+   footprint; a quarter turn swaps it, so the wrapper takes the turned
+   aspect ratio and the picture is laid across it. `rotate` and `translate`
+   rather than `transform`: only the turn animates; the re-centring of a
+   quarter-turned picture applies at once. */
+.milkdown .image-view img {
+  transition: rotate var(--dur-medium) var(--ease-spring);
+}
+.milkdown .image-view[data-rotate="180"] img {
+  rotate: 180deg;
+}
+.milkdown .image-view-turned {
+  container-type: inline-size;
+  aspect-ratio: calc(1 / var(--image-ratio, 1));
+}
+.milkdown .image-view-turned:not(.image-view-sized) {
+  width: min(100%, var(--image-turned-width, 320px));
+}
+.milkdown .image-view-turned img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(100cqw * var(--image-ratio, 1));
+  max-width: none;
+  translate: -50% -50%;
+  rotate: 90deg;
+}
+.milkdown .image-view-turned[data-rotate="270"] img {
+  rotate: -90deg;
+}
+
+/* A new picture fades in once it has arrived. Opacity only: a turned
+   image's transform is its rotation. */
+.milkdown .image-view img {
+  animation: motion-fade-in var(--dur-slow) var(--ease-out);
+}
+.milkdown .image-view-loading img {
+  opacity: 0;
+  animation: none;
+}

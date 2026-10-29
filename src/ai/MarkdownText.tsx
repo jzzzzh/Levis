@@ -5,6 +5,7 @@ import {
   renderMarkdownInlineHtml,
 } from "../editor/markdown/render-html";
 import { useKatexHtml } from "../editor/math/useKatexHtml";
+import { withImageSrc } from "./markdown-image-src";
 
 /**
  * Renders an assistant reply as markdown. The model's output is untrusted
@@ -14,13 +15,20 @@ import { useKatexHtml } from "../editor/math/useKatexHtml";
 export function MarkdownText({
   text,
   live = false,
+  imageSrc,
 }: {
   text: string;
   live?: boolean;
+  /** Levis: where each image's `src` really points; keep it stable. */
+  imageSrc?: (src: string) => string;
 }) {
   // A reply's first formula loads KaTeX and its stylesheet (the detached chat
   // never loads the editor); the reply renders again once it is here.
-  const html = useKatexHtml(text, renderMarkdownHtml);
+  const rendered = useKatexHtml(text, renderMarkdownHtml);
+  const html = useMemo(
+    () => withImageSrc(rendered, imageSrc),
+    [rendered, imageSrc],
+  );
 
   const root = useRef<HTMLDivElement>(null);
   const cascade = useRef<Cascade | null>(null);

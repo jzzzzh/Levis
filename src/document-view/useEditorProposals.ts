@@ -43,6 +43,11 @@ import { plural } from "../i18n/plural";
 import { usePluginDocumentAccess } from "./plugins/usePluginDocumentAccess";
 import { useKeptProposals } from "../ai/revision/useKeptProposals";
 import { explainError } from "../utils/error-explain";
+import {
+  eventToWorkspace,
+  routedToWorkspace,
+  type ProposalRouterRef,
+} from "./levis-proposal-router";
 
 /** The editor's side of AI edits: pending previews, the two conversations
  *  that propose them, and streaming proposals into the document. */
@@ -55,6 +60,7 @@ export function useEditorProposals({
   isActive,
   onDecided,
   requestImageName,
+  levisRouter,
 }: {
   run: EditorRunner;
   pendingEditActionsRef: { current: PendingEditCallbacks };
@@ -67,6 +73,8 @@ export function useEditorProposals({
   onDecided?: (callId: string, changes: DecidedChange[]) => void;
   /** Asks for an accepted picture's file name, when the settings say to. */
   requestImageName: (stem: string, extension: string) => Promise<string | null>;
+  /** Levis: the Agent workspace's claim on proposals. */
+  levisRouter?: ProposalRouterRef;
 }) {
   // How accepting writes a proposal's web citations.
   const citations = useRef<CitationStyle>({ asFootnotes: false, sources: [] });
@@ -209,7 +217,10 @@ export function useEditorProposals({
         streaming?: boolean;
       }[],
       target: SelectionTarget | null,
+      /** From the detached chat window: never the workspace draft's. */
+      external = false,
     ) => {
+      if (!external && routedToWorkspace(levisRouter, proposals)) return;
       // Shown at once: a picture not painted yet is its frame in place.
       if (supersedePending.current) {
         supersedePending.current = false;
@@ -267,6 +278,7 @@ export function useEditorProposals({
       withdrawPictures,
       supersededBy,
       run,
+      levisRouter,
     ],
   );
   // Gives the ProposalStream machine the editor to draw a streaming
@@ -313,6 +325,7 @@ export function useEditorProposals({
   }, [addPreviews, discardRefused, run, animated]);
   // Not memoized: the conversations read it through a ref.
   const handleStreamEvent = (event: StreamEvent) => {
+    if (eventToWorkspace(levisRouter, event)) return;
     // A picture written into a proposal's text is being made: show its frame.
     if (event.type === "picture") {
       noteBegunPicture(event.callId, event.line, event.id, {
@@ -349,7 +362,7 @@ export function useEditorProposals({
     settings.enableWebSearch,
     agentModel,
     handleStreamEvent,
-    pendingEdits.allStatuses,
+    { ...pendingEdits.allStatuses, ...levisRouter?.current?.statuses },
   );
   // Quick Ask's one-off exchange, kept out of History. "Continue in the
   // panel" hands it to `conversation`.

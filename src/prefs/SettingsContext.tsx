@@ -17,6 +17,7 @@ import { ai } from "../platform/ipc";
 import { readBoot } from "../storage/boot";
 import type { Settings } from "./settings-types";
 import { htmlLang } from "./settings-normalise";
+import { exclusiveAi } from "./levis-settings";
 import { setCurrentLanguage } from "../i18n/current";
 import {
   loadSettings,
@@ -65,6 +66,7 @@ export {
 } from "./settings-types";
 export { htmlLang, normaliseSettings } from "./settings-normalise";
 export { loadSettings, resetSettingsStoreForTests } from "./settings-store";
+export type { DefaultHome } from "./levis-settings";
 
 interface SettingsContextValue {
   settings: Settings;
@@ -123,7 +125,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     ai.setAiProxy(proxy).catch(() => {});
   }, [settings.proxyType, settings.proxyHost, settings.proxyPort]);
 
-  function setSettings(patch: Partial<Settings>) {
+  function setSettings(asked: Partial<Settings>) {
+    const patch = exclusiveAi(asked);
     const apply = () => {
       setSettingsState((prev) => ({ ...prev, ...patch }));
       persist(patch);

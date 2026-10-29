@@ -4,6 +4,7 @@ import { readDocText, statMtime, tabIsDirty, type DocTab } from "./doc-tabs";
 import { unlistenAll } from "../platform/events";
 import { FILE_RELOADED_EVENT, FILE_WRITTEN_EVENT } from "../utils/events";
 import { fileTextFor } from "./tracked-file";
+import { tabIsEngaged } from "./levis-tabs";
 
 // On focus, or when something in the window wrote a file, clean tabs whose
 // file changed on disk reload; dirty tabs wait for the save-time prompt.
@@ -51,6 +52,8 @@ export function useExternalChangeReload(
           }
           if (mtime === tab.diskMtime) continue;
           if (tabIsDirty(tab)) continue; // dirty: defer to the save-time prompt
+          // Levis: a remount would drop its Agent conversation or draft.
+          if (tabIsEngaged(tab.id)) continue;
           const content = await readDocText(tab.path).catch(() => null);
           if (content === null) continue;
           // Re-check the live tab: the user may have typed during the read.

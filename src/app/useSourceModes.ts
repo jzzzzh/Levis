@@ -15,6 +15,7 @@ import { keepReadOnly, tabReadOnly } from "../document/read-only";
 import { useSettings } from "../prefs/SettingsContext";
 import type { ViewMode } from "../prefs/settings-types";
 import type { TabState } from "./tabs/useTabState";
+import { levisSourceGuard } from "./levis/source-guard";
 
 /** The rich editor, plain source mode and split view, one for every tab of
  *  every window (Settings' viewMode): switching in one window switches them
@@ -106,5 +107,9 @@ export function useSourceModes(tabState: TabState) {
     return () => cancelAnimationFrame(frame);
   }, [activeSourceMode, activeTabId]);
 
-  return { toggleSourceMode, toggleSplitView, toggleReadOnly };
+  return {
+    toggleSourceMode: levisSourceGuard(liveTabs, activeTabId, toggleSourceMode),
+    toggleSplitView: levisSourceGuard(liveTabs, activeTabId, toggleSplitView),
+    toggleReadOnly,
+  };
 }

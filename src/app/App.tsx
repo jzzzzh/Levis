@@ -34,6 +34,7 @@ import { NoticeHost } from "../ui/notices";
 import "../plugins/plugins.css";
 import "./App.css";
 import { ReportProblemHost } from "./report/ReportProblem";
+import { LevisWindow } from "./levis/LevisWindow";
 
 /**
  * One window: its tabs, the panels around them, and the prompts and notices
@@ -101,6 +102,11 @@ function App() {
           } as React.CSSProperties
         }
       >
+        <LevisWindow
+          tabState={shell.tabState}
+          settings={settings}
+          openFile={(path) => openFile(path)}
+        />
         <WindowBar
           menuChecks={menuChecks}
           title={activeTitle}

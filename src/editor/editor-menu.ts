@@ -27,11 +27,8 @@ import {
   tableLayoutItems,
   tableMenuItems,
 } from "./editor-menu-tables";
-import {
-  imageFileItems,
-  imageTurnItems,
-  imageWidthItems,
-} from "./editor-menu-images";
+import { imageFileItems, imageWidthItems } from "./editor-menu-images";
+import { imageViewItems } from "./editor-menu-image-view";
 export {
   TABLE_ACTIONS,
   type TableAction,
@@ -171,7 +168,7 @@ export function buildContextMenuItems(
   const imageItems = joinGroups(
     imagePos === null ? [] : imageWidthItems(run, t, imagePos),
     imageFileItems(t, options.imageLocation ?? null),
-    imagePos === null ? [] : imageTurnItems(run, t, imagePos),
+    imagePos === null ? [] : imageViewItems(run, t, imagePos),
     imagePos === null ? [] : (options.pictureAiItems ?? []),
   );
   const nothingSelected =

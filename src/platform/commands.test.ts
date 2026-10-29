@@ -34,6 +34,8 @@ describe("the backend's commands", () => {
     const bound = names(lists(rust("bindings.rs"), "collect_commands"));
     const handled = names(
       lists(rust("lib.rs"), "with_plugin_commands") +
+        // Levis wraps the same list (src-tauri/src/levis/mod.rs).
+        lists(rust("lib.rs"), "with_levis_commands") +
         lists(rust("plugins/mod.rs"), "generate_handler"),
     );
     expect(bound.size).toBeGreaterThan(150);

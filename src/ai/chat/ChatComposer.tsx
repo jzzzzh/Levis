@@ -45,6 +45,7 @@ import {
   type ChatComposerProps,
 } from "./composer-types";
 import { isImeKeydown } from "../../utils/ime";
+import { LevisComposerTools } from "./levis-chat";
 
 /** A tablet's sheet has no room for the model: it is picked in Settings
  *  there, as on a phone. */
@@ -89,6 +90,7 @@ export function ChatComposer({
   onModeChange,
   handle,
   suggestion = null,
+  levis,
 }: ChatComposerProps) {
   const phone = usePhoneLayout();
   const picker = labels.picker ?? defaultPickerLabels();
@@ -500,6 +502,15 @@ export function ChatComposer({
                   </Tooltip>
                 )}
               </>
+            )}
+            {!compact && levis && (
+              <LevisComposerTools
+                slots={levis}
+                busy={busy}
+                input={input}
+                setInput={setInput}
+                inputRef={inputRef}
+              />
             )}
             {selectedText && !selectionDropped && dockActions === undefined && (
               <span

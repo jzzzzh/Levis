@@ -21,6 +21,7 @@ import { namedCall, settledArguments, settledTurns } from "./settle-calls";
 import { forgetShimSecrets, pluginApiShim } from "./plugin-shim-api";
 import { webPageCommand } from "./native-web-pages";
 import { makeDevSchedule } from "./schedule-shim";
+import { levisShimInvoke } from "./levis-shim";
 
 /** The built-in skills as `list_skills` reports them (descriptions abridged). */
 const DEV_BUILTIN_SKILLS: [string, string, string, string, string][] = [
@@ -1234,6 +1235,8 @@ export function installDevTauriShim(): void {
           ? Promise.reject(value.__reject)
           : Promise.resolve(value);
       }
+      const levis = levisShimInvoke(cmd, args);
+      if (levis) return levis;
       if (
         cmd === "plugin:event|listen" &&
         args?.event &&
