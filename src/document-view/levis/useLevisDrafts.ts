@@ -8,6 +8,7 @@ import type { StreamEvent } from "../../platform/ipc";
 import type { ProposalRouterRef } from "../levis-proposal-router";
 import { useWorkspacePersistence } from "../useWorkspacePersistence";
 import type { LevisSurface } from "./useLevisSurface";
+import { LARGE_PREVIEW } from "../../ai/workspace/windowed-preview";
 import { onDocChange } from "./doc-changes";
 
 /** A proposal upstream's own picture flow owns: a generated picture, or
@@ -26,6 +27,7 @@ export function useLevisDrafts({
   tabId,
   documentId,
   filePath,
+  initialValue,
   surface,
   conversation,
   router,
@@ -37,6 +39,8 @@ export function useLevisDrafts({
   tabId: string;
   documentId: string;
   filePath: string | null;
+  /** The document as the tab opened it. */
+  initialValue: string;
   surface: LevisSurface;
   conversation: AgentConversation;
   router: ProposalRouterRef;
@@ -93,25 +97,48 @@ export function useLevisDrafts({
   }, [conversation.busy, finishWorkspace, failed]);
 
   // The document as the Agent's preview shows it while there is no draft:
-  // read again on each change while the Agent is on screen.
+  // read when the Agent comes on screen, then taken from each change the
+  // editor reports - serializing a long document again on every change
+  // cost more than the typing itself.
   const hasDraftOperations = !!workspace.draft?.operations.length;
   const visible = workspace.open && isActive;
-  const [docVersion, setDocVersion] = useState(0);
-  useEffect(() => {
-    if (!visible) return;
-    return onDocChange(tabId, () => setDocVersion((n) => n + 1));
-  }, [visible, tabId]);
-  const documentMarkdown = useMemo(
+  // A report taken before the history last changed may be behind it.
+  const history = conversation.history;
+  const historyRef = useRef(history);
+  historyRef.current = history;
+  const visibleRef = useRef(visible);
+  visibleRef.current = visible;
+  const lastReport = useRef<string | null>(null);
+  const [reported, setReported] = useState<{
+    markdown: string;
+    history: unknown;
+  } | null>(null);
+  useEffect(
     () =>
-      visible && !hasDraftOperations
-        ? (run((ctx) =>
-            ctx.get(serializerCtx)(ctx.get(editorViewCtx).state.doc),
-          ) ?? "")
-        : "",
-    // docVersion and the history: read again after either changes it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [visible, hasDraftOperations, run, conversation.history, docVersion],
+      onDocChange(tabId, (markdown) => {
+        lastReport.current = markdown;
+        if (visibleRef.current)
+          setReported({ markdown, history: historyRef.current });
+      }),
+    [tabId],
   );
+  useEffect(() => {
+    if (!visible) setReported(null);
+  }, [visible]);
+  const documentMarkdown = useMemo(() => {
+    if (!visible || hasDraftOperations) return "";
+    if (reported && reported.history === history) return reported.markdown;
+    // Serializing a very long document takes seconds (14 s at 5M
+    // characters): its last report stands in, or the file as it opened,
+    // until the editor reports again.
+    const read = run((ctx) => {
+      const { doc } = ctx.get(editorViewCtx).state;
+      return doc.content.size > LARGE_PREVIEW
+        ? null
+        : ctx.get(serializerCtx)(doc);
+    });
+    return read ?? lastReport.current ?? initialValue;
+  }, [visible, hasDraftOperations, run, history, reported, initialValue]);
 
   const acceptedCount = useRef(0);
   const acceptDraft = (callId?: string) => {

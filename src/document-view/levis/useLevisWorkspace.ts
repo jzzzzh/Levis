@@ -61,6 +61,7 @@ export function useLevisWorkspace(props: LevisWorkspaceProps) {
     tabId,
     documentId,
     filePath,
+    initialValue: props.initialValue,
     surface,
     conversation,
     router: chat.levisRouter,
