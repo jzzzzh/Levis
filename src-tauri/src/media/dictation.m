@@ -34,7 +34,10 @@ static void record(uint64_t token, NSString *locale) {
     // On-device when the language model is installed; otherwise Apple's
     // recognition service rather than refusing outright.
     request.requiresOnDeviceRecognition=recognizer.supportsOnDeviceRecognition;
-    if(@available(macOS 13, *)) request.addsPunctuation=YES;
+    // Punctuation is macOS 13+. Asked of the object, not with @available:
+    // that needs clang's runtime, which a Rust link doesn't bring.
+    if([request respondsToSelector:@selector(setAddsPunctuation:)])
+        [request setValue:@YES forKey:@"addsPunctuation"];
     transcript=@""; heard=NO;
     started=lastVoice=NSDate.timeIntervalSinceReferenceDate;
     engine=[AVAudioEngine new];

@@ -33,6 +33,7 @@
     "screenshots:plugins": "playwright test -c playwright.shots.config.ts --project=plugins",
     "screenshots:review": "playwright test -c playwright.shots.config.ts --project=review",
     "bench:motion": "playwright test -c playwright.bench.config.ts",
+    "bench:levis": "playwright test -c e2e/levis-perf/playwright.config.ts",
     "sync-models": "node scripts/sync-models.mjs",
     "bindings": "node scripts/write-bindings.mjs"
   },
