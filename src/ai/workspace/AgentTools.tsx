@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { ComposerMenu, type ComposerMenuItem } from "../chat/ComposerMenu";
 import { SparkleIcon } from "../../ui/levis-icons";
+import "../chat/levis-composer.css";
 
 /**
  * The Agent composer's own tools (project folder, writing in sections),

@@ -1,5 +1,5 @@
 /* Levis: the Agent composer's tools menu, its chips and dictation
-   (levis-chat.tsx, ai/workspace/AgentTools.tsx). */
+   (ai/workspace/AgentTools.tsx, which loads it). */
 
 .composer-chip {
   display: inline-flex;

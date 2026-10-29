@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import type { AgentRequestOptions } from "./useAgentConversation";
-import "./levis-composer.css";
 
 /**
  * Levis' hooks into upstream's chat (the `levis` prop on ChatBody): what

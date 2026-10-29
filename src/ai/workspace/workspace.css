@@ -560,11 +560,6 @@
 .agent-home .inline-chat-toolbar button {
   border: 0;
 }
-.agent-home .inline-chat-toolbar .inline-chat-send {
-  width: 32px;
-  height: 32px;
-  min-height: 32px;
-}
 .workspace-extra-tools {
   margin: var(--space-3) var(--space-2) 0;
   font-size: var(--text-xs);

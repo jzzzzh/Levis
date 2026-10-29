@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { SparkleIcon } from "../../ui/levis-icons";
+import "./surface-switch.css";
 
 /**
  * Agent | 写作: the window's one switch between the two surfaces, in the
