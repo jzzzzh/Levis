@@ -42,6 +42,39 @@ document, cycle after cycle; DOM nodes grow the same way).
 | 1M, 425 pictures    | 1.80 GB, idle at 5.6 s | 1.84 GB, 5.9 s |
 | 10M, 4,255 pictures | 7.9 GB, idle at 187 s  | 8.7 GB, 187 s  |
 
+## After the fixes (same day)
+
+| Typing at the end, key p50 (60 ms a key) | upstream | Levis now |
+| ---------------------------------------- | -------- | --------- |
+| 1M                                       | 119 ms   | 58 ms     |
+| 5M                                       | 29.5 s   | 5.4 s     |
+| 10M                                      | 98 s     | 11.4 s    |
+
+What was fixed:
+
+- `src/editor/prosemirror-speedups.ts`: ProseMirror's `Fragment.findIndex`
+  and `DecorationSet.forChild` were linear and ran per block or per
+  decoration - quadratic per keystroke. Now logarithmic, with the same
+  answers (tested). At 5M the editor's own work per key fell from about
+  2 s to about 0.09 s.
+- `src/utils/word-count.ts`: the paragraph cache held 50,000 entries and was
+  cleared when full, so a document with more paragraphs was recounted in
+  full on every edit. It now keeps the last count's paragraphs.
+- `src/editor/fill-slots/fill-slot-plugin.ts`: blanks are redrawn only in
+  the blocks an edit touched.
+- The "memory kept after closing grows each time" was the dev shim's: its
+  `unregisterCallback` did nothing, so every unlistened event handler kept
+  its editor. Fixed in `src/dev/tauri-shim.ts`; the real runtime always
+  dropped them. What stays now is bounded - at most the last closed
+  document (Milkdown's `$command` keeps the last editor's context) - and
+  no longer grows (6 open/close cycles: flat after the second).
+
+Still slow, and why: at 5M a key costs about 0.35 s, 0.3 s of it the
+browser laying out a DOM of over a million nodes. Skipping off-screen
+blocks with `content-visibility` made opening four times slower and typing
+no faster, so the next step would be rendering only the visible part of
+the document - a larger change. Opening (25 s at 5M) is the same story.
+
 ## Levis' own findings
 
 - **Opening the Agent on a 1M+ document crashes the renderer** (or does not

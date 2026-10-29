@@ -167,6 +167,9 @@ async function typeAtEnd(page: Page, count: number) {
   await page.locator(editor).focus();
   await page.keyboard.press("ControlOrMeta+End");
   await page.keyboard.press("Enter");
+  // The pictures around the end load first: typing is measured, not them.
+  await page.waitForLoadState("networkidle");
+  await page.waitForTimeout(1000);
   await page.evaluate(() => {
     (window as unknown as { __levisKeys: number[] }).__levisKeys.length = 0;
   });

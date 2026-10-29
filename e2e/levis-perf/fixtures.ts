@@ -98,9 +98,11 @@ function chunk(type: string, data: Buffer): Buffer {
 }
 
 /**
- * An RGB PNG of `width`×`height`: soft colour blocks with grain, so it
- * compresses like a photo-ish illustration (a few hundred KB at 1600×1000)
- * and decodes to width×height×4 bytes, as a real picture does.
+ * An RGB PNG of `width`×`height`: soft colour blocks with a little grain
+ * per 4-pixel cell, so it compresses about as well as an illustration
+ * (tens of KB at 1600×1000) and decodes to width×height×4 bytes, as a real
+ * picture does. Pixel-level noise made each file megabytes, and serving
+ * thousands of them through the test's router became what was measured.
  */
 export function makePng(width: number, height: number, seed = 1): Buffer {
   let s = seed >>> 0 || 1;
@@ -110,6 +112,8 @@ export function makePng(width: number, height: number, seed = 1): Buffer {
     s ^= s << 5;
     return (s >>> 0) / 4294967296;
   };
+  const cells = new Uint8Array(Math.ceil(width / 4) * Math.ceil(height / 4));
+  for (let i = 0; i < cells.length; i++) cells[i] = Math.floor(rand() * 12);
   const row = width * 3 + 1;
   const raw = Buffer.alloc(row * height);
   for (let y = 0; y < height; y++) {
@@ -118,7 +122,8 @@ export function makePng(width: number, height: number, seed = 1): Buffer {
       const bx = Math.floor(x / 64);
       const by = Math.floor(y / 64);
       const base = ((bx * 37 + by * 91) % 160) + 48;
-      const grain = Math.floor(rand() * 24);
+      const grain =
+        cells[Math.floor(y / 4) * Math.ceil(width / 4) + Math.floor(x / 4)];
       const at = y * row + 1 + x * 3;
       raw[at] = base + grain;
       raw[at + 1] = ((base * 7) % 200) + grain;

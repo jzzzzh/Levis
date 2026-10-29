@@ -6,6 +6,10 @@ import { fillSlotPlugin } from "../../editor/fill-slots/fill-slot-plugin";
 import { createMagicDiaryPlugin } from "../../ai/magic-diary/magic-diary-plugin";
 import type { Settings } from "../../prefs/SettingsContext";
 import type { TourAi } from "../../utils/events";
+import { installProseMirrorSpeedups } from "../../editor/prosemirror-speedups";
+
+// Long documents: ProseMirror lookups that were linear made logarithmic.
+installProseMirrorSpeedups();
 
 /**
  * Levis' editor plugins, after upstream's (editor-extensions.ts): the

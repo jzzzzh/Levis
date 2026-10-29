@@ -32,9 +32,12 @@ function countText(text: string): number {
 }
 
 // Each paragraph's count, cached by its text: segmenting a long document
-// whole after every edit was slow, and no word crosses a line break.
-const PARAGRAPHS_KEPT = 50_000;
-const paragraphCounts = new Map<string, number>();
+// whole after every edit was slow, and no word crosses a line break. The
+// cache is the last count's paragraphs, so it holds one document whatever
+// its size (a fixed cap, cleared when full, recounted every paragraph of a
+// document longer than it on every edit).
+let paragraphCounts = new Map<string, number>();
+let counting = new Map<string, number>();
 
 /** An image's turn or width kept in its title (`{textus-rotate=90}`,
  *  images/image-rotation.ts): layout, not words. */
@@ -42,12 +45,10 @@ const IMAGE_TITLE_METADATA =
   /\{(?:\s*(?:textus|levis)-(?:width|rotate)=[^\s}]*)+\s*\}/g;
 
 function countParagraph(text: string): number {
-  let words = paragraphCounts.get(text);
-  if (words === undefined) {
+  let words = counting.get(text) ?? paragraphCounts.get(text);
+  if (words === undefined)
     words = countText(text.replace(IMAGE_TITLE_METADATA, ""));
-    if (paragraphCounts.size >= PARAGRAPHS_KEPT) paragraphCounts.clear();
-    paragraphCounts.set(text, words);
-  }
+  counting.set(text, words);
   return words;
 }
 
@@ -74,5 +75,7 @@ export function countWords(markdown: string): WordCount {
     else paragraph += line + "\n";
   }
   flush();
+  paragraphCounts = counting;
+  counting = new Map();
   return { words };
 }
